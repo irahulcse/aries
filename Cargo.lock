@@ -65,7 +65,7 @@ dependencies = [
  "aries_backtrack",
  "aries_model",
  "aries_solver",
- "aries_tnet",
+ "aries_stn",
  "structopt",
 ]
 
@@ -93,7 +93,7 @@ dependencies = [
  "aries_model",
  "aries_planning",
  "aries_solver",
- "aries_tnet",
+ "aries_stn",
  "aries_utils",
  "env_param",
  "structopt",
@@ -134,7 +134,7 @@ dependencies = [
  "aries_backtrack",
  "aries_model",
  "aries_solver",
- "aries_tnet",
+ "aries_stn",
 ]
 
 [[package]]
@@ -151,7 +151,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aries_tnet"
+name = "aries_stn"
 version = "0.1.0"
 dependencies = [
  "aries_backtrack",

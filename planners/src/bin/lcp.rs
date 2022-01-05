@@ -10,7 +10,7 @@ use aries_planning::chronicles::*;
 use aries_planning::parsing::pddl::{find_domain_of, parse_pddl_domain, parse_pddl_problem, PddlFeature};
 use aries_planning::parsing::pddl_to_chronicles;
 use aries_solver::parallel_solver::ParSolver;
-use aries_tnet::theory::{StnConfig, StnTheory, TheoryPropagationLevel};
+use aries_stn::theory::{StnConfig, StnTheory, TheoryPropagationLevel};
 use aries_utils::input::Input;
 use std::fs::File;
 use std::io::Write;

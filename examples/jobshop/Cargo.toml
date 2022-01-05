@@ -10,7 +10,7 @@ anyhow = "1.0"
 aries_backtrack = { path = "../../backtrack" }
 aries_model = { path = "../../model" }
 aries_solver = { path = "../../solver" }
-aries_tnet = { path = "../../tnet" }
+aries_stn = { path = "../../reasoners/stn" }
 
 
 [[bin]]
