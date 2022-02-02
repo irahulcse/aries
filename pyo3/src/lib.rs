@@ -947,7 +947,7 @@ fn propagate_and_print(pb: &FiniteProblem, verbose: bool) {
 }
 
 fn init_solver(pb: &FiniteProblem) -> Box<Solver> {
-    let model = encode(pb).unwrap();
+    let (model, _causal_links) = encode(pb).unwrap();
     let stn_config = StnConfig {
         theory_propagation: TheoryPropagationLevel::Full,
         ..Default::default()

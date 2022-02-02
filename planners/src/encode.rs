@@ -1,7 +1,10 @@
 //! Functions whose purpose is to encode a planning problem (represented with chronicles)
 //! into a combinatorial problem from Aries core.
 
-use crate::encoding::{conditions, effects, refinements_of, refinements_of_task, TaskRef, HORIZON, ORIGIN};
+use crate::encoding::{
+    conditions, effects, refinements_of, refinements_of_task, ConditionId, EffectId, TaskRef, TaskRef, HORIZON,
+    HORIZON, ORIGIN, ORIGIN,
+};
 use crate::solver::Metric;
 use crate::Model;
 use anyhow::{Context, Result};
@@ -13,6 +16,7 @@ use aries_model::lang::{FAtom, IAtom, Variable};
 use aries_planning::chronicles::constraints::ConstraintType;
 use aries_planning::chronicles::*;
 use env_param::EnvParam;
+use std::collections::HashMap;
 use std::convert::TryInto;
 
 /// Parameter that defines the symmetry breaking strategy to use.
@@ -369,6 +373,17 @@ pub fn add_metric(pb: &FiniteProblem, model: &mut Model, metric: Metric) -> IAto
     }
 }
 
+#[derive(Default)]
+pub struct CausalLinks {
+    pub links: HashMap<(ConditionId, EffectId), Lit>,
+}
+impl CausalLinks {
+    pub fn record(&mut self, cond: ConditionId, eff: EffectId, support: Lit) {
+        assert!(!self.links.contains_key(&(cond, eff)));
+        self.links.insert((cond, eff), support);
+    }
+}
+
 /// Encodes a finite problem.
 /// If a metric is given, it will return along with the model and `IAtom` that should be minimized
 pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Model, Option<IAtom>)> {
@@ -379,19 +394,19 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
     let conds: Vec<_> = conditions(pb).collect();
     let eff_ends: Vec<_> = effs
         .iter()
-        .map(|(instance_id, prez, _)| {
+        .map(|(eff_id, prez, _)| {
             model.new_optional_fvar(
                 ORIGIN * TIME_SCALE,
                 HORIZON * TIME_SCALE,
                 TIME_SCALE,
                 *prez,
-                Container::Instance(*instance_id) / VarType::EffectEnd,
+                Container::Instance(eff_id.chronicle_id) / VarType::EffectEnd,
             )
         })
         .collect();
 
     // for each condition, make sure the end is after the start
-    for &(_prez_cond, cond) in &conds {
+    for &(_cond_id, _prez_cond, cond) in &conds {
         model.enforce(f_leq(cond.start, cond.end));
     }
 
@@ -448,13 +463,14 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
         }
     }
 
+    let mut causal_links = CausalLinks::default();
     // support constraints
-    for (_cond_id, &(prez_cond, cond)) in conds.iter().enumerate() {
+    for (_, &(cond_id, prez_cond, cond)) in conds.iter().enumerate() {
         let mut supported: Vec<Lit> = Vec::with_capacity(128);
         // no need to support if the condition is not present
         supported.push(!prez_cond);
 
-        for (eff_id, &(_, prez_eff, eff)) in effs.iter().enumerate() {
+        for (eff_id, &(eff_id2, prez_eff, eff)) in effs.iter().enumerate() {
             // quick check that the condition and effect are not trivially incompatible
             if !unifiable_sv(&model, &cond.state_var, &eff.state_var) {
                 continue;
@@ -490,6 +506,7 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                 model.state.implies(prez_cond, prez_support)
             });
 
+            causal_links.record(cond_id, eff_id2, support_lit);
             // add this support expression to the support clause
             supported.push(support_lit);
         }
@@ -573,5 +590,5 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
     add_symmetry_breaking(pb, &mut model, symmetry_breaking_tpe);
     let metric = metric.map(|metric| add_metric(pb, &mut model, metric));
 
-    Ok((model, metric))
+    Ok((model, metric, causal_links))
 }

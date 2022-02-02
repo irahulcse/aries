@@ -3,6 +3,7 @@
 use anyhow::*;
 use std::fmt::Write;
 
+use crate::encoding::{ConditionId, EffectId};
 use crate::Model;
 use aries_model::extensions::{AssignmentExt, SavedAssignment, Shaped};
 use aries_model::lang::SAtom;
@@ -137,15 +138,38 @@ pub fn format_partial_plan(problem: &FiniteProblem, ass: &Model) -> Result<Strin
     Ok(f)
 }
 
-pub fn format_pddl_plan(problem: &FiniteProblem, ass: &SavedAssignment) -> Result<String> {
-    let fmt = |name: &[SAtom]| -> String {
-        let syms: Vec<_> = name
-            .iter()
-            .map(|x| ass.sym_domain_of(*x).into_singleton().unwrap())
-            .collect();
-        problem.model.shape.symbols.format(&syms)
-    };
+pub fn fmt_list(name: &[SAtom], assignment: &SavedAssignment, problem: &FiniteProblem) -> String {
+    let syms: Vec<_> = name
+        .iter()
+        .map(|x| assignment.sym_domain_of(*x).into_singleton().unwrap())
+        .collect();
+    problem.model.shape.symbols.format(&syms)
+}
 
+pub fn format_chronicle(chronicle_id: usize, assignment: &SavedAssignment, problem: &FiniteProblem) -> String {
+    let ch = &problem.chronicles[chronicle_id];
+    match ch.chronicle.kind {
+        ChronicleKind::Problem => "PROBLEM".to_string(),
+        _ => fmt_list(&ch.chronicle.name, assignment, problem),
+    }
+}
+
+pub fn format_effect(eff: EffectId, assignment: &SavedAssignment, problem: &FiniteProblem) -> String {
+    fmt_list(
+        &problem.chronicles[eff.chronicle_id].chronicle.effects[eff.effect_id].state_var,
+        assignment,
+        problem,
+    )
+}
+pub fn format_cond(cond: ConditionId, assignment: &SavedAssignment, problem: &FiniteProblem) -> String {
+    fmt_list(
+        &problem.chronicles[cond.chronicle_id].chronicle.conditions[cond.condition_id].state_var,
+        assignment,
+        problem,
+    )
+}
+
+pub fn format_pddl_plan(problem: &FiniteProblem, ass: &SavedAssignment) -> Result<String> {
     let mut out = String::new();
     let mut plan = Vec::new();
     for ch in &problem.chronicles {
@@ -159,7 +183,7 @@ pub fn format_pddl_plan(problem: &FiniteProblem, ass: &SavedAssignment) -> Resul
         let start = ass.f_domain(ch.chronicle.start).lb();
         let end = ass.f_domain(ch.chronicle.end).lb();
         let duration = end - start;
-        let name = fmt(&ch.chronicle.name);
+        let name = fmt_list(&ch.chronicle.name, ass, problem);
         plan.push((start, name.clone(), duration));
     }
 

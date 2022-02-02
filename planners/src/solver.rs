@@ -111,7 +111,7 @@ pub fn format_plan(problem: &FiniteProblem, plan: &Arc<Domains>, htn_mode: bool)
 }
 
 pub fn init_solver(pb: &FiniteProblem, metric: Option<Metric>) -> (Box<Solver>, Option<IAtom>) {
-    let (model, metric) = encode(pb, metric).expect("Failed to encode the problem"); // TODO: report error
+    let (model, metric, _causal_links) = encode(pb, metric).expect("Failed to encode the problem"); // TODO: report error
     let stn_config = StnConfig {
         theory_propagation: TheoryPropagationLevel::Full,
         ..Default::default()
