@@ -4,29 +4,61 @@ use aries_model::bounds::Lit;
 use aries_model::lang::FAtom;
 use aries_planning::chronicles::{ChronicleOrigin, ChronicleTemplate, Condition, Effect, FiniteProblem, Problem, Task};
 
+#[derive(Copy, Clone, Hash, Eq, Ord, PartialOrd, PartialEq, Debug)]
+pub struct EffectId {
+    /// Index of the chronicle this effect appears in
+    pub chronicle_id: usize,
+    /// Index of the effect inside the chronicle
+    pub effect_id: usize,
+}
+
+#[derive(Copy, Clone, Hash, Eq, Ord, PartialOrd, PartialEq, Debug)]
+pub struct ConditionId {
+    /// Index of the chronicle this condition appears in
+    pub chronicle_id: usize,
+    /// Index of the condition inside the chronicle
+    pub condition_id: usize,
+}
+
 /// Iterator over all effects in an finite problem.
 ///
 /// Each effect is associated with
 /// - the ID of the chronicle instance in which the effect appears
 /// - a literal that is true iff the effect is present in the solution.
-pub fn effects(pb: &FiniteProblem) -> impl Iterator<Item = (usize, Lit, &Effect)> {
-    pb.chronicles.iter().enumerate().flat_map(|(instance_id, ch)| {
-        ch.chronicle
-            .effects
-            .iter()
-            .map(move |eff| (instance_id, ch.chronicle.presence, eff))
+pub fn effects(pb: &FiniteProblem) -> impl Iterator<Item = (EffectId, Lit, &Effect)> {
+    pb.chronicles.iter().enumerate().flat_map(|(chronicle_id, ch)| {
+        ch.chronicle.effects.iter().enumerate().map(move |(effect_id, eff)| {
+            (
+                EffectId {
+                    chronicle_id,
+                    effect_id,
+                },
+                ch.chronicle.presence,
+                eff,
+            )
+        })
     })
 }
 
 /// Iterates over all conditions in an finite problem.
 ///
 /// Each condition is associated with a literal that is true iff the effect is present in the solution.
-pub fn conditions(pb: &FiniteProblem) -> impl Iterator<Item = (Lit, &Condition)> {
-    pb.chronicles.iter().flat_map(|ch| {
+pub fn conditions(pb: &FiniteProblem) -> impl Iterator<Item = (ConditionId, Lit, &Condition)> {
+    pb.chronicles.iter().enumerate().flat_map(|(chronicle_id, ch)| {
         ch.chronicle
             .conditions
             .iter()
-            .map(move |cond| (ch.chronicle.presence, cond))
+            .enumerate()
+            .map(move |(condition_id, cond)| {
+                (
+                    ConditionId {
+                        chronicle_id,
+                        condition_id,
+                    },
+                    ch.chronicle.presence,
+                    cond,
+                )
+            })
     })
 }
 

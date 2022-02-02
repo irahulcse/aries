@@ -1,7 +1,9 @@
 //! Functions whose purpose is to encode a planning problem (represented with chronicles)
 //! into a combinatorial problem from Aries core.
 
-use crate::encoding::{conditions, effects, refinements_of, refinements_of_task, TaskRef, HORIZON, ORIGIN};
+use crate::encoding::{
+    conditions, effects, refinements_of, refinements_of_task, ConditionId, EffectId, TaskRef, HORIZON, ORIGIN,
+};
 use crate::Model;
 use anyhow::{Context, Result};
 use aries_model::bounds::Lit;
@@ -12,6 +14,7 @@ use aries_model::lang::{FAtom, VarRef};
 use aries_planning::chronicles::constraints::ConstraintType;
 use aries_planning::chronicles::*;
 use env_param::EnvParam;
+use std::collections::HashMap;
 use std::convert::TryInto;
 
 /// Parameter that defines the symmetry breaking strategy to use.
@@ -303,7 +306,18 @@ fn add_symmetry_breaking(pb: &FiniteProblem, model: &mut Model, tpe: SymmetryBre
     };
 }
 
-pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
+#[derive(Default)]
+pub struct CausalLinks {
+    pub links: HashMap<(ConditionId, EffectId), Lit>,
+}
+impl CausalLinks {
+    pub fn record(&mut self, cond: ConditionId, eff: EffectId, support: Lit) {
+        assert!(!self.links.contains_key(&(cond, eff)));
+        self.links.insert((cond, eff), support);
+    }
+}
+
+pub fn encode(pb: &FiniteProblem) -> anyhow::Result<(Model, CausalLinks)> {
     let mut model = pb.model.clone();
     let symmetry_breaking_tpe = SYMMETRY_BREAKING.get();
 
@@ -311,19 +325,19 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
     let conds: Vec<_> = conditions(pb).collect();
     let eff_ends: Vec<_> = effs
         .iter()
-        .map(|(instance_id, prez, _)| {
+        .map(|(eff_id, prez, _)| {
             model.new_optional_fvar(
                 ORIGIN * TIME_SCALE,
                 HORIZON * TIME_SCALE,
                 TIME_SCALE,
                 *prez,
-                Container::Instance(*instance_id) / VarType::EffectEnd,
+                Container::Instance(eff_id.chronicle_id) / VarType::EffectEnd,
             )
         })
         .collect();
 
     // for each condition, make sure the end is after the start
-    for &(_prez_cond, cond) in &conds {
+    for &(_cond_id, _prez_cond, cond) in &conds {
         model.enforce(f_leq(cond.start, cond.end));
     }
 
@@ -380,13 +394,14 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
         }
     }
 
+    let mut causal_links = CausalLinks::default();
     // support constraints
-    for (_cond_id, &(prez_cond, cond)) in conds.iter().enumerate() {
+    for (_, &(cond_id, prez_cond, cond)) in conds.iter().enumerate() {
         let mut supported: Vec<Lit> = Vec::with_capacity(128);
         // no need to support if the condition is not present
         supported.push(!prez_cond);
 
-        for (eff_id, &(_, prez_eff, eff)) in effs.iter().enumerate() {
+        for (eff_id, &(eff_id2, prez_eff, eff)) in effs.iter().enumerate() {
             // quick check that the condition and effect are not trivially incompatible
             if !unifiable_sv(&model, &cond.state_var, &eff.state_var) {
                 continue;
@@ -417,7 +432,7 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
             supported_by_eff_conjunction.push(model.reify(f_leq(cond.end, eff_ends[eff_id])));
 
             let support_lit = model.reify(and(supported_by_eff_conjunction));
-
+            causal_links.record(cond_id, eff_id2, support_lit);
             // add this support expression to the support clause
             supported.push(support_lit);
         }
@@ -494,5 +509,5 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
     add_decomposition_constraints(pb, &mut model);
     add_symmetry_breaking(pb, &mut model, symmetry_breaking_tpe);
 
-    Ok(model)
+    Ok((model, causal_links))
 }

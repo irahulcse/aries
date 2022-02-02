@@ -1,8 +1,10 @@
 use crate::Strat::{Activity, Forward};
 use anyhow::{Context, Result};
 use aries_model::extensions::SavedAssignment;
-use aries_planners::encode::{encode, populate_with_task_network, populate_with_template_instances};
-use aries_planners::fmt::{format_hddl_plan, format_partial_plan, format_pddl_plan};
+use aries_planners::encode::{encode, populate_with_task_network, populate_with_template_instances, CausalLinks};
+use aries_planners::fmt::{
+    format_chronicle, format_cond, format_effect, format_hddl_plan, format_partial_plan, format_pddl_plan,
+};
 use aries_planners::forward_search::ForwardSearcher;
 use aries_planners::Solver;
 use aries_planning::chronicles::analysis::hierarchical_is_non_recursive;
@@ -120,7 +122,7 @@ fn main() -> Result<()> {
         } else {
             let result = solve(&pb, &opt, htn_mode);
             println!("  [{:.3}s] solved", start.elapsed().as_secs_f32());
-            if let Some(x) = result {
+            if let Some((x, causal_links)) = result {
                 // println!("{}", format_partial_plan(&pb, &x)?);
                 println!("  Solution found");
                 let plan = if htn_mode {
@@ -135,6 +137,17 @@ fn main() -> Result<()> {
                 } else {
                     format_pddl_plan(&pb, &x)?
                 };
+                for ((c, e), lit) in causal_links.links.iter() {
+                    if x.present(lit.variable()) == Some(true) && x.entails(*lit) {
+                        println!(
+                            "Condition on {} of action {}\n  Support by effect of action {}",
+                            format_cond(*c, &x, &pb),
+                            format_chronicle(c.chronicle_id, &x, &pb),
+                            format_chronicle(e.chronicle_id, &x, &pb),
+                        );
+                    }
+                }
+
                 println!("{}", plan);
                 if let Some(plan_out_file) = opt.plan_out_file {
                     let mut file = File::create(plan_out_file)?;
@@ -148,8 +161,8 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn init_solver(pb: &FiniteProblem) -> Box<Solver> {
-    let model = encode(pb).unwrap(); // TODO: report error
+fn init_solver(pb: &FiniteProblem) -> (Box<Solver>, CausalLinks) {
+    let (model, causal_links) = encode(pb).unwrap(); // TODO: report error
     let stn_config = StnConfig {
         theory_propagation: TheoryPropagationLevel::Full,
         ..Default::default()
@@ -157,7 +170,7 @@ fn init_solver(pb: &FiniteProblem) -> Box<Solver> {
 
     let mut solver = Box::new(aries_solver::solver::Solver::new(model));
     solver.add_theory(|tok| StnTheory::new(tok, stn_config));
-    solver
+    (solver, causal_links)
 }
 
 /// Default set of strategies for HTN problems
@@ -197,8 +210,8 @@ impl FromStr for Strat {
     }
 }
 
-fn solve(pb: &FiniteProblem, opt: &Opt, htn_mode: bool) -> Option<std::sync::Arc<SavedAssignment>> {
-    let solver = init_solver(pb);
+fn solve(pb: &FiniteProblem, opt: &Opt, htn_mode: bool) -> Option<(std::sync::Arc<SavedAssignment>, CausalLinks)> {
+    let (solver, causal_links) = init_solver(pb);
     let strats: &[Strat] = if !opt.strategies.is_empty() {
         &opt.strategies
     } else if htn_mode {
@@ -221,14 +234,14 @@ fn solve(pb: &FiniteProblem, opt: &Opt, htn_mode: bool) -> Option<std::sync::Arc
 
     if let Some(solution) = found_plan {
         solver.print_stats();
-        Some(solution)
+        Some((solution, causal_links))
     } else {
         None
     }
 }
 
 fn propagate_and_print(pb: &FiniteProblem) {
-    let mut solver = init_solver(pb);
+    let (mut solver, _) = init_solver(pb);
     if solver.propagate_and_backtrack_to_consistent() {
         let str = format_partial_plan(pb, &solver.model).unwrap();
         println!("{}", str);
