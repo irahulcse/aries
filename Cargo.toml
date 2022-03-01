@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "core", "planning", "planners", "collections", "model", "solver", "env_param", "utils",
+    "core", "planning", "planners", "collections", "model", "solver", "env_param", "utils", "pyo3",
     "reasoners/stn",
     "reasoners/cp",
     "examples/sat",
