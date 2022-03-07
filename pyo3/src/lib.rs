@@ -300,11 +300,11 @@ impl ChronicleProblem {
             Some(effects),         // Effects
             None,                  // Timed effects
             None,                  // Task
-            None,                  // Ordered subtasks
-            None,                  // Unordered subtaks
+            None,                  // Subtasks
+            None,                  // Subtasks orders
             None,                  // Grounded task
-            None,                  // Grounded ordered subtasks
-            None,                  // Grounded unordered subtaks
+            None,                  // Grounded subtasks
+            None,                  // Grounded subtasks orders
         );
     }
 
@@ -340,11 +340,11 @@ impl ChronicleProblem {
             None,                          // Effects
             Some(effects),                 // Timed effects
             None,                          // Task
-            None,                          // Ordered subtasks
-            None,                          // Unordered subtaks
+            None,                          // Subtasks
+            None,                          // Subtasks orders
             None,                          // Grounded task
-            None,                          // Grounded ordered subtasks
-            None,                          // Grounded unordered subtaks
+            None,                          // Grounded subtasks
+            None,                          // Grounded subtasks orders
         );
     }
 
@@ -360,34 +360,33 @@ impl ChronicleProblem {
     ///     - List of conditions for a durative action. A condition has the following format:
     ///     `[name, pos_arg1, pos_arg2, ..., value]`
     ///     where `pos_argi` is the position of the argument in `method`.
-    /// - ordered_subtasks : list of list of str
-    ///     - List of the ordered subtasks done by this method.
+    /// - subtasks : list of list of str
+    ///     - List of the subtasks done by this method.
     ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
-    /// - unordered_subtasks : list of list of str
-    ///     - List of the unordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
+    /// - subtasks_orders : list of list of int
+    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
     fn add_method(
         &mut self,
         method: Vec<&str>,
         task: Vec<&str>,
         conditions: Vec<Vec<&str>>,
-        ordered_subtasks: Vec<Vec<&str>>,
-        unordered_subtasks: Vec<Vec<&str>>,
+        subtasks: Vec<Vec<&str>>,
+        subtasks_orders: Vec<Vec<usize>>,
     ) {
         self.add_template(
-            method,                   // Sign
-            ChronicleKind::Method,    // Template type
-            None,                     // Duration
-            Some(conditions),         // Conditions
-            None,                     // Timed conditions
-            None,                     // Effects
-            None,                     // Timed effects
-            Some(task),               // Task
-            Some(ordered_subtasks),   // Ordered subtasks
-            Some(unordered_subtasks), // Unordered subtaks
-            None,                     // Grounded task
-            None,                     // Grounded ordered subtasks
-            None,                     // Grounded unordered subtaks
+            method,                // Sign
+            ChronicleKind::Method, // Template type
+            None,                  // Duration
+            Some(conditions),      // Conditions
+            None,                  // Timed conditions
+            None,                  // Effects
+            None,                  // Timed effects
+            Some(task),            // Task
+            Some(subtasks),        // Subtasks
+            Some(subtasks_orders), // Subtasks orders
+            None,                  // Grounded task
+            None,                  // Grounded subtasks
+            None,                  // Grounded subtasks orders
         );
     }
 
@@ -398,39 +397,38 @@ impl ChronicleProblem {
     /// - method : list of str
     ///     - Method name followed by the type of its arguments.
     /// - task : list of str
-    ///     - Task name followed by the position of the arguments in `method`.
+    ///     - Task name followed by its constant parameters.
     /// - conditions : list of list of str
     ///     - List of conditions for a durative action. A condition has the following format:
     ///     `[name, pos_arg1, pos_arg2, ..., value]`
     ///     where `pos_argi` is the position of the argument in `method`.
-    /// - ordered_subtasks : list of list of str
-    ///     - List of the ordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
-    /// - unordered_subtasks : list of list of str
-    ///     - List of the unordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
+    /// - subtasks : list of list of str
+    ///     - List of the subtasks done by this method.
+    ///     A subtasks is the subtask name followed by its constant parameters.
+    /// - subtasks_orders : list of list of int
+    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
     fn add_grounded_method(
         &mut self,
         method: Vec<&str>,
         task: Vec<&str>,
         conditions: Vec<Vec<&str>>,
-        ordered_subtasks: Vec<Vec<&str>>,
-        unordered_subtaks: Vec<Vec<&str>>,
+        subtasks: Vec<Vec<&str>>,
+        subtasks_orders: Vec<Vec<usize>>,
     ) {
         self.add_template(
-            method,                  // Sign
-            ChronicleKind::Method,   // Template type
-            None,                    // Duration
-            Some(conditions),        // Conditions
-            None,                    // Timed conditions
-            None,                    // Effects
-            None,                    // Timed effects
-            None,                    // Task
-            None,                    // Ordered subtasks
-            None,                    // Unordered subtaks
-            Some(task),              // Grounded task
-            Some(ordered_subtasks),  // Grounded ordered subtasks
-            Some(unordered_subtaks), // Grounded unordered subtaks
+            method,                // Sign
+            ChronicleKind::Method, // Template type
+            None,                  // Duration
+            Some(conditions),      // Conditions
+            None,                  // Timed conditions
+            None,                  // Effects
+            None,                  // Timed effects
+            None,                  // Task
+            None,                  // Subtasks
+            None,                  // Subtasks orders
+            Some(task),            // Grounded task
+            Some(subtasks),        // Grounded subtasks
+            Some(subtasks_orders), // Grounded subtasks orders
         )
     }
 
@@ -532,20 +530,18 @@ impl ChronicleProblem {
     ///     where `pos_argi` is the position of the argument in `sign` and `when` is in `["start", "end", "over all"]`.
     /// - task : list of str, optional
     ///     - Task name followed by the position of the arguments in `method`.
-    /// - ordered_subtasks : list of list of str, optional
-    ///     - List of the ordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
-    /// - unordered_subtasks : list of list of str
-    ///     - List of the unordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
+    /// - subtasks : list of list of str
+    ///     - List of the subtasks done by this method.
+    ///     A subtask is the subtask name followed by the position of the arguments in `method`.
+    /// - subtasks_orders : list of list of int
+    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
     /// - grounded_task : list of str, optional
-    ///     - Grounded task name followed by the constants parameters.
-    /// - grounded_ordered_subtasks : list of list of str, optional
-    ///     - List of the grounded ordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by its constant parameters.
-    /// - grounded_unordered_subtasks : list of list of str
-    ///     - List of the grounded unordered subtasks done by this method.
-    ///     A subtasks is the subtask name followed by its constant parameters.
+    ///     - Grounded task name followed by the constant parameters.
+    /// - grounded_subtasks : list of list of str
+    ///     - List of the subtasks done by this method.
+    ///     A subtask is the subtask name followed by its constant parameters.
+    /// - grounded_subtasks_orders : list of list of int
+    ///     - Each list defines the order of the subtasks with their position in `grounded_subtasks`.
     fn add_template(
         &mut self,
         sign: Vec<&str>,
@@ -556,11 +552,11 @@ impl ChronicleProblem {
         effects: Option<Vec<Vec<&str>>>,
         timed_effects: Option<Vec<Vec<&str>>>,
         task: Option<Vec<&str>>,
-        ordered_subtasks: Option<Vec<Vec<&str>>>,
-        unordered_subtasks: Option<Vec<Vec<&str>>>,
+        subtasks: Option<Vec<Vec<&str>>>,
+        subtasks_orders: Option<Vec<Vec<usize>>>,
         grounded_task: Option<Vec<&str>>,
-        grounded_ordered_subtasks: Option<Vec<Vec<&str>>>,
-        grounded_unordered_subtasks: Option<Vec<Vec<&str>>>,
+        grounded_subtasks: Option<Vec<Vec<&str>>>,
+        grounded_subtasks_orders: Option<Vec<Vec<usize>>>,
     ) {
         let context = self.context.as_mut().unwrap();
 
@@ -746,9 +742,9 @@ impl ChronicleProblem {
             ch.constraints.push(Constraint::duration(duration));
         }
 
-        // Ordered subtasks
-        if let Some(subtasks) = ordered_subtasks {
-            let mut previous_end = None;
+        // Subtasks
+        if let Some(subtasks) = subtasks {
+            let mut tasks = vec![];
             for subtask in subtasks {
                 let mut tn: Vec<SAtom> = vec![context
                     .typed_sym(context.model.get_symbol_table().id(subtask[0]).unwrap())
@@ -757,47 +753,25 @@ impl ChronicleProblem {
                     tn.push(name[subtask[i].parse::<usize>().unwrap()]);
                 }
                 let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
-                if let Some(previous_end) = previous_end {
-                    ch.constraints.push(Constraint::lt(previous_end, st.start))
-                }
-                previous_end = Some(st.end);
+                tasks.push((st.start, st.end));
                 ch.subtasks.push(st);
             }
-        };
-        if let Some(subtasks) = grounded_ordered_subtasks {
-            let mut previous_end = None;
-            for subtask in subtasks {
-                let mut tn = vec![];
-                for arg in subtask {
-                    tn.push(
-                        context
-                            .typed_sym(context.model.get_symbol_table().id(arg).unwrap())
-                            .into(),
-                    );
-                }
-                let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
-                if let Some(previous_end) = previous_end {
-                    ch.constraints.push(Constraint::lt(previous_end, st.start))
-                }
-                previous_end = Some(st.end);
-                ch.subtasks.push(st);
-            }
-        };
 
-        // Unordered subtasks
-        if let Some(subtasks) = unordered_subtasks {
-            for subtask in subtasks {
-                let mut tn: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(subtask[0]).unwrap())
-                    .into()];
-                for i in 1..subtask.len() {
-                    tn.push(name[subtask[i].parse::<usize>().unwrap()]);
+            if let Some(orders) = subtasks_orders {
+                for order in orders {
+                    for i in 0..order.len() - 1 {
+                        let first_end = tasks[order[i]].1;
+                        let second_start = tasks[order[i + 1]].0;
+                        ch.constraints.push(Constraint::lt(first_end, second_start));
+                        println!("{} < {}", order[i], order[i + 1]);
+                    }
                 }
-                let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
-                ch.subtasks.push(st);
             }
-        };
-        if let Some(subtasks) = grounded_unordered_subtasks {
+        }
+
+        // Grounded subtasks
+        if let Some(subtasks) = grounded_subtasks {
+            let mut tasks = vec![];
             for subtask in subtasks {
                 let mut tn = vec![];
                 for arg in subtask {
@@ -808,7 +782,18 @@ impl ChronicleProblem {
                     );
                 }
                 let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
+                tasks.push((st.start, st.end));
                 ch.subtasks.push(st);
+            }
+
+            if let Some(orders) = grounded_subtasks_orders {
+                for order in orders {
+                    for i in 0..order.len() - 1 {
+                        let first_end = tasks[order[i]].1;
+                        let second_start = tasks[order[i + 1]].0;
+                        ch.constraints.push(Constraint::lt(first_end, second_start));
+                    }
+                }
             }
         };
 
