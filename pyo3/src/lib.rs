@@ -283,13 +283,17 @@ impl ChronicleProblem {
     /// - action : list of str
     ///     - Action name followed by the type of its arguments.
     /// - conditions : list of list of str
-    ///     - List of preconditions for this action. A precondition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `action`.
+    ///     - List of preconditions for this action. A precondition has one of the following format:
+    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
+    ///           where `pos_argi` is the position of the argument in `action`.
+    ///         - `[name, arg1, arg2, ..., value]`
+    ///           where `arg1` is the value of a contant argument.
     /// - effects : list of list of str
-    ///     - List of effects done by this action. An effect has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `action`.
+    ///     - List of effects done by this action. An effect has one of the following format:
+    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
+    ///           where `pos_argi` is the position of the argument in `action`.
+    ///         - `[name, arg1, arg2, ..., value]`
+    ///           where `arg1` is the value of a contant argument.
     fn add_action(&mut self, action: Vec<&str>, conditions: Vec<Vec<&str>>, effects: Vec<Vec<&str>>) {
         self.add_template(
             action,                // Sign
@@ -513,17 +517,21 @@ impl ChronicleProblem {
     /// - duration : i32, optional
     ///     - The duration for a durative action.
     /// - conditions : list of list of str, optional
-    ///     - List of preconditions. A precondition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `sign`.
+    ///     - List of preconditions. A precondition has one of the following format:
+    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
+    ///           where `pos_argi` is the position of the argument in `sign`.
+    ///         - `[name, arg1, arg2, ..., value]`
+    ///           where `arg1` is the value of a contant argument.
     /// - timed_conditions : list of list of str, optional
     ///     - List of conditions for a durative action. A condition has the following format:
     ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
     ///     where `pos_argi` is the position of the argument in `sign` and `when` is in `["start", "end", "over all"]`.
     /// - effects : list of list of str, optional
-    ///     - List of effects. An effect has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `sign`.
+    ///     - List of effects. An effect has one of the following format:
+    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
+    ///           where `pos_argi` is the position of the argument in `sign`.
+    ///         - `[name, arg1, arg2, ..., value]`
+    ///           where `arg1` is the value of a contant argument.
     /// - timed_effects : list of list of str, optional
     ///     - List of effects for a durative action. An effect has the following format:
     ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
@@ -591,13 +599,19 @@ impl ChronicleProblem {
             .typed_sym(context.model.get_symbol_table().id(sign[0]).unwrap())
             .into()];
         for s in sign.iter().skip(1) {
-            let arg = context.model.new_optional_sym_var(
-                context.model.get_symbol_table().types.id_of(*s).unwrap(),
-                prez,
-                c / VarType::Parameter,
-            );
-            params.push(arg.into());
-            name.push(arg.into());
+            if let Some(var_type) = context.model.get_symbol_table().types.id_of(*s) {
+                let arg = context
+                    .model
+                    .new_optional_sym_var(var_type, prez, c / VarType::Parameter);
+                params.push(arg.into());
+                name.push(arg.into());
+            } else {
+                name.push(
+                    context
+                        .typed_sym(context.model.get_symbol_table().id(*s).unwrap())
+                        .into(),
+                );
+            }
         }
 
         // Task
@@ -644,7 +658,15 @@ impl ChronicleProblem {
                     .typed_sym(context.model.get_symbol_table().id(effect[0]).unwrap())
                     .into()];
                 for i in 1..effect.len() - 1 {
-                    sv.push(name[effect[i].parse::<usize>().unwrap()]);
+                    if let Ok(index) = effect[i].parse::<usize>() {
+                        sv.push(name[index]);
+                    } else {
+                        sv.push(
+                            context
+                                .typed_sym(context.model.get_symbol_table().id(effect[i]).unwrap())
+                                .into(),
+                        );
+                    }
                 }
                 ch.effects.push(Effect {
                     transition_start: ch.start,
@@ -685,7 +707,15 @@ impl ChronicleProblem {
                     .typed_sym(context.model.get_symbol_table().id(condition[0]).unwrap())
                     .into()];
                 for i in 1..condition.len() - 1 {
-                    sv.push(name[condition[i].parse::<usize>().unwrap()]);
+                    if let Ok(index) = condition[i].parse::<usize>() {
+                        sv.push(name[index]);
+                    } else {
+                        sv.push(
+                            context
+                                .typed_sym(context.model.get_symbol_table().id(condition[i]).unwrap())
+                                .into(),
+                        );
+                    }
                 }
                 let has_effect_on_same_state_variable = ch
                     .effects
@@ -763,7 +793,6 @@ impl ChronicleProblem {
                         let first_end = tasks[order[i]].1;
                         let second_start = tasks[order[i + 1]].0;
                         ch.constraints.push(Constraint::lt(first_end, second_start));
-                        println!("{} < {}", order[i], order[i + 1]);
                     }
                 }
             }
