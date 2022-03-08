@@ -246,15 +246,29 @@ impl ChronicleProblem {
     ///
     /// Parameters
     /// ----------
-    /// - task : list of str
-    ///     - Task name and followed by the type of its arguments.
-    fn add_goal_task(&mut self, state_var: Vec<&str>) {
+    /// - tasks : list of list of str
+    ///     - List of tasks. A task is its name followed by the constant value of its arguments.
+    /// - orders : list of list of int
+    ///     - Each list defines the order of the tasks with their position in `tasks`.
+    fn add_goal_task(&mut self, tasks: Vec<Vec<&str>>, orders: Vec<Vec<usize>>) {
         let init_container = Container::Instance(0);
-        let tn = self.satom_from_signature(state_var);
-        let prez = self.init_ch.as_ref().unwrap().presence;
-        let context = self.context.as_mut().unwrap();
-        let st = create_subtask(context, init_container, prez, None, tn);
-        self.init_ch.as_mut().unwrap().subtasks.push(st);
+        let mut tasks_list = vec![];
+        for task in tasks {
+            let tn = self.satom_from_signature(task);
+            let prez = self.init_ch.as_ref().unwrap().presence;
+            let context = self.context.as_mut().unwrap();
+            let st = create_subtask(context, init_container, prez, None, tn);
+            tasks_list.push((st.start, st.end));
+            self.init_ch.as_mut().unwrap().subtasks.push(st);
+        }
+
+        for order in &orders {
+            for i in 0..order.len() - 1 {
+                let first_end = tasks_list[order[i]].1;
+                let second_start = tasks_list[order[i + 1]].0;
+                self.init_ch.as_mut().unwrap().constraints.push(Constraint::lt(first_end, second_start));
+            }
+        }
     }
 
     /// Allows the user to add an initial state.
