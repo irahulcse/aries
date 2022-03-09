@@ -18,6 +18,8 @@ use aries_solver::parallel_solver::ParSolver;
 use aries_tnet::theory::{StnConfig, StnTheory, TheoryPropagationLevel};
 use aries_utils::input::Sym;
 use pyo3::prelude::*;
+use std::fs::File;
+use std::io::Write;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
@@ -266,7 +268,11 @@ impl ChronicleProblem {
             for i in 0..order.len() - 1 {
                 let first_end = tasks_list[order[i]].1;
                 let second_start = tasks_list[order[i + 1]].0;
-                self.init_ch.as_mut().unwrap().constraints.push(Constraint::lt(first_end, second_start));
+                self.init_ch
+                    .as_mut()
+                    .unwrap()
+                    .constraints
+                    .push(Constraint::lt(first_end, second_start));
             }
         }
     }
@@ -456,7 +462,9 @@ impl ChronicleProblem {
     /// ----------
     /// - htn : bool
     ///     - Whether or not the problem is hierarchical.
-    fn solve(&self, htn: bool) {
+    /// - output_file : str
+    ///     - Path to the output file where the plan will be saved.
+    fn solve(&self, htn: bool, output_file: &str) {
         run_problem(
             &mut Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -468,6 +476,7 @@ impl ChronicleProblem {
                 }],
             },
             htn,
+            output_file,
         );
     }
 }
@@ -899,7 +908,7 @@ fn chronicles(_py: Python, m: &PyModule) -> PyResult<()> {
 
 //region Solver
 /// This part is mainly a copy of `aries/planners/src/bin/lcp.rs`
-fn run_problem(problem: &mut Problem, htn_mode: bool) {
+fn run_problem(problem: &mut Problem, htn_mode: bool, output_file: &str) {
     println!("===== Preprocessing ======");
     aries_planning::chronicles::preprocessing::preprocess(problem);
     println!("==========================");
@@ -951,6 +960,8 @@ fn run_problem(problem: &mut Problem, htn_mode: bool) {
                 format_pddl_plan(&pb, &x).unwrap()
             };
             println!("{}", plan);
+            let mut file = File::create(output_file).unwrap();
+            file.write_all(plan.as_bytes()).unwrap();
             break;
         }
     }
