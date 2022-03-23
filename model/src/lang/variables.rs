@@ -1,7 +1,7 @@
 use crate::lang::variables::Variable::*;
 use crate::lang::{BVar, ConversionError, FVar, IVar, Kind, SVar};
 use aries_core::*;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 /// Contains a variable of any type
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -80,6 +80,17 @@ impl TryFrom<Variable> for IVar {
     }
 }
 
+impl TryFrom<Variable> for FVar {
+    type Error = ConversionError;
+
+    fn try_from(value: Variable) -> Result<Self, Self::Error> {
+        match value {
+            Fixed(x) => Ok(x),
+            _ => Err(ConversionError::TypeError),
+        }
+    }
+}
+
 impl TryFrom<Variable> for SVar {
     type Error = ConversionError;
 
@@ -88,5 +99,40 @@ impl TryFrom<Variable> for SVar {
             Sym(x) => Ok(x),
             _ => Err(ConversionError::TypeError),
         }
+    }
+}
+
+impl TryFrom<&Variable> for BVar {
+    type Error = ConversionError;
+
+    fn try_from(value: &Variable) -> Result<Self, Self::Error> {
+        (*value).try_into()
+    }
+}
+
+impl TryFrom<&Variable> for IVar {
+    type Error = ConversionError;
+
+    fn try_from(value: &Variable) -> Result<Self, Self::Error> {
+        (*value).try_into()
+
+    }
+}
+
+impl TryFrom<&Variable> for SVar {
+    type Error = ConversionError;
+
+    fn try_from(value: &Variable) -> Result<Self, Self::Error> {
+        (*value).try_into()
+
+    }
+}
+
+impl TryFrom<&Variable> for FVar {
+    type Error = ConversionError;
+
+    fn try_from(value: &Variable) -> Result<Self, Self::Error> {
+        (*value).try_into()
+
     }
 }

@@ -17,6 +17,20 @@ impl Constraint {
             tpe: Lt,
         }
     }
+
+    pub fn reify(a: impl Into<Atom>, c: Constraint) -> Constraint {
+        Constraint {
+            variables: vec![a.into()],
+            tpe: Reify(Box::new(c))
+        }
+    }
+
+    pub fn leq(a: impl Into<Atom>, b: impl Into<Atom>) -> Constraint {
+        Constraint {
+            variables: vec![a.into(), b.into()],
+            tpe: ConstraintType::Leq,
+        }
+    }
     pub fn eq(a: impl Into<Atom>, b: impl Into<Atom>) -> Constraint {
         Constraint {
             variables: vec![a.into(), b.into()],
@@ -42,21 +56,23 @@ impl Substitute for Constraint {
     fn substitute(&self, substitution: &impl Substitution) -> Self {
         Constraint {
             variables: self.variables.iter().map(|i| substitution.sub(*i)).collect(),
-            tpe: self.tpe,
+            tpe: self.tpe.clone(),
         }
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum ConstraintType {
     /// Variables should take a value as one of the tuples in the corresponding table.
     InTable {
         table_id: u32,
     },
     Lt,
+    Leq,
     Eq,
     Neq,
     Duration(IntCst),
+    Reify(Box<Constraint>)
 }
 
 /// A set of tuples, representing the allowed values in a table constraint.
