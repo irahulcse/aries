@@ -303,7 +303,12 @@ fn add_symmetry_breaking(pb: &FiniteProblem, model: &mut Model, tpe: SymmetryBre
     };
 }
 
-fn reify_constraint(model: &mut Model, pb: &FiniteProblem, instance: &ChronicleInstance, constraint: &Constraint) -> anyhow::Result<Lit> {
+fn reify_constraint(
+    model: &mut Model,
+    pb: &FiniteProblem,
+    instance: &ChronicleInstance,
+    constraint: &Constraint,
+) -> anyhow::Result<Lit> {
     match constraint.tpe {
         ConstraintType::InTable { table_id } => {
             let mut supported_by_a_line: Vec<Lit> = Vec::with_capacity(256);
@@ -332,9 +337,9 @@ fn reify_constraint(model: &mut Model, pb: &FiniteProblem, instance: &ChronicleI
         ConstraintType::Eq => {
             if constraint.variables.len() != 2 {
                 anyhow::bail!(
-                            "Wrong number of parameters to equality constraint: {}",
-                            constraint.variables.len()
-                        );
+                    "Wrong number of parameters to equality constraint: {}",
+                    constraint.variables.len()
+                );
             }
             let a = constraint.variables[0];
             let b = constraint.variables[0];
@@ -342,18 +347,18 @@ fn reify_constraint(model: &mut Model, pb: &FiniteProblem, instance: &ChronicleI
                 //println!("{:?}, eq between bool", constraint);
                 let a: Lit = a.try_into().unwrap();
                 let b: Lit = b.try_into().unwrap();
-                let vec = vec![model.reify(or(vec![!a,b])), model.reify(or(vec![!b,a]))];
+                let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
                 Ok(model.reify(and(vec)))
-            }else {
+            } else {
                 Ok(model.reify(eq(constraint.variables[0], constraint.variables[1])))
             }
         }
         ConstraintType::Neq => {
             if constraint.variables.len() != 2 {
                 anyhow::bail!(
-                            "Wrong number of parameters to inequality constraint: {}",
-                            constraint.variables.len()
-                        );
+                    "Wrong number of parameters to inequality constraint: {}",
+                    constraint.variables.len()
+                );
             }
             Ok(model.reify(neq(constraint.variables[0], constraint.variables[1])))
         }
@@ -371,13 +376,13 @@ fn reify_constraint(model: &mut Model, pb: &FiniteProblem, instance: &ChronicleI
         ConstraintType::Reify(ref c) => {
             if constraint.variables.len() != 1 {
                 anyhow::bail!(
-                            "Wrong number of parameters to reify constraint : {}",
-                            constraint.variables.len()
-                        );
+                    "Wrong number of parameters to reify constraint : {}",
+                    constraint.variables.len()
+                );
             }
-            let x:Lit = constraint.variables[0].try_into()?;
+            let x: Lit = constraint.variables[0].try_into()?;
             let lit = reify_constraint(model, pb, instance, c.deref())?;
-            let vec = vec![model.reify(or(vec![!x,lit])), model.reify(or(vec![!lit, x]))];
+            let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
             Ok(model.reify(and(vec)))
         }
     }
@@ -516,9 +521,6 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
         model.enforce(or(supported));
     }
 
-
-
-
     // chronicle constraints
     for instance in &pb.chronicles {
         for constraint in &instance.chronicle.constraints {
@@ -559,10 +561,9 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
                         let a: Lit = a.try_into().unwrap();
                         let b: Lit = b.try_into().unwrap();
-                        let vec = vec![model.reify(or(vec![!a,b])), model.reify(or(vec![!b,a]))];
+                        let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
                         model.enforce(and(vec));
-
-                    }else {
+                    } else {
                         model.enforce(eq(constraint.variables[0], constraint.variables[1]));
                     }
                 }
@@ -596,7 +597,7 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     let x: Lit = constraint.variables[0].try_into()?;
 
                     let lit = reify_constraint(&mut model, pb, instance, c.deref())?;
-                    let vec = vec![model.reify(or(vec![!x,lit])), model.reify(or(vec![!lit, x]))];
+                    let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
                     model.enforce(and(vec));
                 }
             }

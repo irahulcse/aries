@@ -21,7 +21,7 @@ impl Constraint {
     pub fn reify(a: impl Into<Atom>, c: Constraint) -> Constraint {
         Constraint {
             variables: vec![a.into()],
-            tpe: Reify(Box::new(c))
+            tpe: Reify(Box::new(c)),
         }
     }
 
@@ -72,7 +72,7 @@ pub enum ConstraintType {
     Eq,
     Neq,
     Duration(IntCst),
-    Reify(Box<Constraint>)
+    Reify(Box<Constraint>),
 }
 
 /// A set of tuples, representing the allowed values in a table constraint.

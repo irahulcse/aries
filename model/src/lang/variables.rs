@@ -115,7 +115,6 @@ impl TryFrom<&Variable> for IVar {
 
     fn try_from(value: &Variable) -> Result<Self, Self::Error> {
         (*value).try_into()
-
     }
 }
 
@@ -124,7 +123,6 @@ impl TryFrom<&Variable> for SVar {
 
     fn try_from(value: &Variable) -> Result<Self, Self::Error> {
         (*value).try_into()
-
     }
 }
 
@@ -133,6 +131,5 @@ impl TryFrom<&Variable> for FVar {
 
     fn try_from(value: &Variable) -> Result<Self, Self::Error> {
         (*value).try_into()
-
     }
 }
