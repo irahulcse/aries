@@ -339,12 +339,11 @@ fn reify_constraint(model: &mut Model, pb: &FiniteProblem, instance: &ChronicleI
             let a = constraint.variables[0];
             let b = constraint.variables[0];
             if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
-                println!("{:?}, eq between bool", constraint);
+                //println!("{:?}, eq between bool", constraint);
                 let a: Lit = a.try_into().unwrap();
                 let b: Lit = b.try_into().unwrap();
                 let vec = vec![model.reify(or(vec![!a,b])), model.reify(or(vec![!b,a]))];
                 Ok(model.reify(and(vec)))
-
             }else {
                 Ok(model.reify(eq(constraint.variables[0], constraint.variables[1])))
             }
@@ -549,7 +548,6 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     x => anyhow::bail!("Invalid variable pattern for LT constraint: {:?}", x),
                 },
                 ConstraintType::Eq => {
-                    println!("{:?}, encoding eq", constraint);
                     if constraint.variables.len() != 2 {
                         anyhow::bail!(
                             "Wrong number of parameters to equality constraint: {}",
@@ -559,7 +557,6 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     let a = constraint.variables[0];
                     let b = constraint.variables[0];
                     if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
-                        println!("{:?}, eq between bool", constraint);
                         let a: Lit = a.try_into().unwrap();
                         let b: Lit = b.try_into().unwrap();
                         let vec = vec![model.reify(or(vec![!a,b])), model.reify(or(vec![!b,a]))];
