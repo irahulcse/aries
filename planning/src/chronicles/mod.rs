@@ -12,7 +12,7 @@ use aries_model::extensions::Shaped;
 use aries_model::lang::{Atom, FAtom, IAtom, Type, Variable};
 use aries_model::symbols::{SymId, SymbolTable, TypedSym};
 use aries_model::Model;
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 /// Time being represented as a fixed point numeral, this is the denominator of any time numeral.
@@ -98,6 +98,7 @@ pub struct ChronicleTemplate {
     pub parameters: Vec<Variable>,
     pub chronicle: Chronicle,
 }
+
 impl ChronicleTemplate {
     pub fn instantiate(
         &self,
