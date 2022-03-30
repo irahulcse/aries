@@ -561,8 +561,10 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
                         let a: Lit = a.try_into().unwrap();
                         let b: Lit = b.try_into().unwrap();
-                        let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
-                        model.enforce(and(vec));
+                        /*let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
+                        model.enforce(and(vec));*/
+                        model.enforce(implies(!a, b));
+                        model.enforce(implies(!b, a));
                     } else {
                         model.enforce(eq(constraint.variables[0], constraint.variables[1]));
                     }
@@ -597,8 +599,10 @@ pub fn encode(pb: &FiniteProblem) -> anyhow::Result<Model> {
                     let x: Lit = constraint.variables[0].try_into()?;
 
                     let lit = reify_constraint(&mut model, pb, instance, c.deref())?;
-                    let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
-                    model.enforce(and(vec));
+                    //let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
+                    //model.enforce(and(vec));
+                    model.enforce(implies(!x, lit));
+                    model.enforce(implies(!lit, x));
                 }
             }
         }
