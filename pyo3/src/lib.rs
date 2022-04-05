@@ -4,7 +4,7 @@ use aries_model::extensions::{SavedAssignment, Shaped};
 use aries_model::lang::{FAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
-use aries_planners::encode::{encode, populate_with_task_network, populate_with_template_instances};
+use aries_planners::encode::{encode, populate_with_task_network};
 use aries_planners::fmt::{format_hddl_plan, format_pddl_plan};
 use aries_planners::forward_search::ForwardSearcher;
 use aries_planners::Solver;
@@ -14,10 +14,10 @@ use aries_planning::chronicles::{
     Chronicle, ChronicleInstance, ChronicleKind, ChronicleOrigin, ChronicleTemplate, Condition, Container, Ctx, Effect,
     FiniteProblem, Problem, StateFun, SubTask, VarType, TIME_SCALE,
 };
-use aries_solver::parallel_solver::ParSolver;
 use aries_tnet::theory::{StnConfig, StnTheory, TheoryPropagationLevel};
 use aries_utils::input::Sym;
 use pyo3::prelude::*;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::str::FromStr;
@@ -34,11 +34,34 @@ static PREDICATE_TYPE: &str = "★predicate★";
 static OBJECT_TYPE: &str = "★object★";
 static FUNCTION_TYPE: &str = "★function★";
 
+/// Custom types
+type Symbol = String;
+/// It is composed of the name followed by the arguments.
+/// An argument is of the form "name - type"
+type Sign = Vec<Symbol>;
+/// It is composed of the name followed by the arguments followed by the temporal interval.
+type TempSign = Vec<String>;
+/// It is composed of the name followed by the arguments followed by a value and finally the temporal interval.
+type TempValSign = Vec<String>;
+/// It is composed of the first element, the relation, and the second element.
+type Constr = Vec<String>;
+/// It is a specific type of `Constr`.
+/// The format of a temporal constraint is `[label1_(start|end) + delay1, relation, label2_(start|end) + delay2]` with:
+///     - timepoint1 + delay: the first timepoint of the constraint,and its delay.
+///     - relation: must be one of the following "==", "<", ">", "<=", ">=".
+///     - timepoint2 + delay: the second timepoint of the constraint,and its delay.
+type TemporalConstraint = Vec<String>;
+/// It is composed of the signature of the associated state variable followed by its value and finally the temporal interval.
+type Cond = TempValSign;
+/// It is composed of the signature of the associated state variable followed by its value and finally the temporal interval.
+type Eff = TempValSign;
+
 /// A python class to generate a planning problem with chronicles.
 #[pyclass]
 struct ChronicleProblem {
-    types: Vec<(Sym, Option<Sym>)>,
-    symbols: Vec<(Sym, Sym)>,
+    types: Vec<(Sym, Option<Sym>)>, // Type symbol with its optional parent type symbol
+    constants: HashMap<Sym, bool>,  // Map a symbol to a boolean representing if the symbol is a constant
+    symbols: Vec<(Sym, Sym)>,       // Symbol with its type symbol
     symbol_table: Option<SymbolTable>,
     state_variables: Vec<StateFun>,
     context: Option<Ctx>,
@@ -50,7 +73,6 @@ struct ChronicleProblem {
 #[pymethods]
 impl ChronicleProblem {
     /// Constructor of the class.
-    /// Sets all attributes to their default values.
     #[new]
     fn new() -> Self {
         ChronicleProblem {
@@ -64,6 +86,7 @@ impl ChronicleProblem {
                 (FUNCTION_TYPE.into(), None),
                 (OBJECT_TYPE.into(), None),
             ],
+            constants: HashMap::new(),
             symbols: vec![],
             symbol_table: None,
             state_variables: vec![],
@@ -74,14 +97,7 @@ impl ChronicleProblem {
     }
 
     /// Allows the user to add their own hierarchical types.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the type.
-    /// - parent : str, optional
-    ///     - The symbol of the parent of the type.
-    fn add_type(&mut self, sym: &str, parent: Option<&str>) {
+    fn add_type(&mut self, sym: Symbol, parent: Option<Symbol>) {
         if let Some(parent) = parent {
             self.types.push((sym.into(), Some(parent.into())));
         } else {
@@ -89,88 +105,40 @@ impl ChronicleProblem {
         }
     }
 
-    /// Allows the user to add the symbol of an object.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the object.
-    /// - _type : str
-    ///     - The type of the object.
-    fn add_object_symbol(&mut self, sym: &str, _type: &str) {
-        self.symbols.push((sym.into(), _type.into()))
-    }
-
-    /// Allows the user to add the symbol of a constant.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the constant.
-    /// - _type : str
-    ///     - The type of the constant.
-    fn add_constant_symbol(&mut self, sym: &str, _type: &str) {
-        self.symbols.push((sym.into(), _type.into()))
+    /// Allows the user to add the symbol of a constant with its type.
+    fn add_constant_symbol(&mut self, sym: Symbol, tpe: Symbol) {
+        self.symbols.push((sym.clone().into(), tpe.into()));
+        self.constants.insert(sym.into(), true);
     }
 
     /// Allows the user to add the symbol of a predicate.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the predicate.
-    fn add_predicate_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), PREDICATE_TYPE.into()))
-    }
-
-    /// Allows the user to add the symbol of an action.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the action.
-    fn add_action_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), ACTION_TYPE.into()))
-    }
-
-    /// Allows the user to add the symbol of a durative action.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the durative action.
-    fn add_durative_action_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), DURATIVE_ACTION_TYPE.into()))
-    }
-
-    /// Allows the user to add the symbol of a task.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the task.
-    fn add_task_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), ABSTRACT_TASK_TYPE.into()))
-    }
-
-    /// Allows the user to add the symbol of a method.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the method.
-    fn add_method_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), METHOD_TYPE.into()))
+    fn add_predicate_symbol(&mut self, sym: Symbol) {
+        self.symbols.push((sym.clone().into(), PREDICATE_TYPE.into()));
+        self.constants.insert(sym.into(), false);
     }
 
     /// Allows the user to add the symbol of a function.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the function.
-    fn add_function_symbol(&mut self, sym: &str) {
-        self.symbols.push((sym.into(), FUNCTION_TYPE.into()))
+    fn add_function_symbol(&mut self, sym: Symbol) {
+        self.symbols.push((sym.clone().into(), FUNCTION_TYPE.into()));
+        self.constants.insert(sym.into(), false);
+    }
+
+    /// Allows the user to add the symbol of an action.
+    fn add_action_symbol(&mut self, sym: Symbol) {
+        self.symbols.push((sym.clone().into(), ACTION_TYPE.into()));
+        self.constants.insert(sym.into(), false);
+    }
+
+    /// Allows the user to add the symbol of a task.
+    fn add_task_symbol(&mut self, sym: Symbol) {
+        self.symbols.push((sym.clone().into(), ABSTRACT_TASK_TYPE.into()));
+        self.constants.insert(sym.into(), false);
+    }
+
+    /// Allows the user to add the symbol of a method.
+    fn add_method_symbol(&mut self, sym: Symbol) {
+        self.symbols.push((sym.clone().into(), METHOD_TYPE.into()));
+        self.constants.insert(sym.into(), false);
     }
 
     /// Creates the symbol table used for the creation of the state variables and the context.
@@ -180,28 +148,14 @@ impl ChronicleProblem {
             Some(SymbolTable::new(TypeHierarchy::new(self.types.to_vec()).unwrap(), self.symbols.to_vec()).unwrap());
     }
 
-    /// Allows the user to add a predicate.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the predicate.
-    /// - args : list of str
-    ///     - The types of the predicate arguments.
-    fn add_predicate(&mut self, sym: &str, args: Vec<&str>) {
-        self.add_state_variable(sym, args, Type::Bool);
+    /// Allows the user to add a predicate with its signature.
+    fn add_predicate(&mut self, sign: Sign) {
+        self.add_state_variable(sign, Type::Bool);
     }
 
-    /// Allows the user to add a function.
-    ///
-    /// Parameters
-    /// ----------
-    /// - sym : str
-    ///     - The symbol of the function.
-    /// - args : list of str
-    ///     - The types of the function arguments.
-    fn add_function(&mut self, sym: &str, args: Vec<&str>) {
-        self.add_state_variable(sym, args, Type::Int);
+    /// Allows the user to add a function with its signature.
+    fn add_function(&mut self, sign: Sign) {
+        self.add_state_variable(sign, Type::Int);
     }
 
     /// Creates the context of the problem and the initial chronicle.
@@ -225,72 +179,61 @@ impl ChronicleProblem {
         });
     }
 
-    /// Allows the user to add a goal.
+    /// Allow the user to add the initial task network goal, describing the goal.
     ///
     /// Parameters
     /// ----------
-    /// - state_var: list of str
-    ///     - State variable name followed by the type of its arguments.
-    /// - value : bool
-    ///     - Value of the state variable to be achieved.
-    fn add_goal(&mut self, state_var: Vec<&str>, value: bool) {
-        let sv = self.satom_from_signature(state_var);
-        let init_ch = self.init_ch.as_mut().unwrap();
-        init_ch.conditions.push(Condition {
-            start: init_ch.end,
-            end: init_ch.end,
-            state_var: sv,
-            value: value.into(),
-        });
+    /// - tasks : list of TempSign
+    ///     - List of task temporal signatures of the initial task network.
+    /// - constraints : list of TemporalConstraint
+    ///     - List of temporal constraints between the tasks of the initial task network.
+    fn add_goal(&mut self, tasks: Vec<TempSign>, constraints: Vec<TemporalConstraint>) {
+        add_task_network(
+            Container::Instance(0),
+            self.init_ch.as_mut().unwrap(),
+            self.context.as_mut().unwrap(),
+            None,
+            tasks,
+            constraints,
+        )
     }
 
-    /// Allows the user to add a goal as a task.
+    /// Allows the user to add an initial effect, describing a part of the initial state.
     ///
     /// Parameters
     /// ----------
-    /// - tasks : list of list of str
-    ///     - List of tasks. A task is its name followed by the constant value of its arguments.
-    /// - orders : list of list of int
-    ///     - Each list defines the order of the tasks with their position in `tasks`.
-    fn add_goal_task(&mut self, tasks: Vec<Vec<&str>>, orders: Vec<Vec<usize>>) {
-        let init_container = Container::Instance(0);
-        let mut tasks_list = vec![];
-        for task in tasks {
-            let tn = self.satom_from_signature(task);
-            let prez = self.init_ch.as_ref().unwrap().presence;
-            let context = self.context.as_mut().unwrap();
-            let st = create_subtask(context, init_container, prez, None, tn);
-            tasks_list.push((st.start, st.end));
-            self.init_ch.as_mut().unwrap().subtasks.push(st);
-        }
+    /// - effect: Eff
+    ///     - The initial effect to add.
+    fn add_initial_effect(&mut self, mut effect: Eff) {
+        let sign_end: String = effect.pop().unwrap();
+        let sign_end: Vec<&str> = sign_end.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+        let value_end: &str = sign_end[0];
+        let sign_start: String = effect.pop().unwrap();
+        let sign_start: Vec<&str> = sign_start.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+        let value_start: &str = sign_start[0];
+        let value: bool = effect.pop().unwrap().to_lowercase().parse().unwrap();
+        let sv = satom_from_signature(self.context.as_mut().unwrap(), effect);
+        let ch = self.init_ch.as_mut().unwrap();
 
-        for order in &orders {
-            for i in 0..order.len() - 1 {
-                let first_end = tasks_list[order[i]].1;
-                let second_start = tasks_list[order[i + 1]].0;
-                self.init_ch
-                    .as_mut()
-                    .unwrap()
-                    .constraints
-                    .push(Constraint::lt(first_end, second_start));
-            }
-        }
-    }
+        let start = if value_start == "__start__" || value_start == "__now__" {
+            ch.start
+        } else if value_start == "__end__" {
+            ch.end
+        } else {
+            panic!("unsupported start case {}", value_start)
+        };
 
-    /// Allows the user to add an initial state.
-    ///
-    /// Parameters
-    /// ----------
-    /// - state_var : list of str
-    ///     - State variable name followed by the type of its arguments.
-    /// - value : bool
-    ///     - Value of the state variable to be initialised.
-    fn add_init(&mut self, state_var: Vec<&str>, value: bool) {
-        let sv = self.satom_from_signature(state_var);
-        let init_ch = self.init_ch.as_mut().unwrap();
-        init_ch.effects.push(Effect {
-            transition_start: init_ch.start,
-            persistence_start: init_ch.start,
+        let end = if value_end == "__end__" {
+            ch.end
+        } else if value_end == "__start__" || value_end == "__now__" {
+            ch.start
+        } else {
+            panic!("unsupported end case {}", value_end)
+        };
+
+        ch.effects.push(Effect {
+            transition_start: start,
+            persistence_start: end,
             state_var: sv,
             value: value.into(),
         });
@@ -300,159 +243,51 @@ impl ChronicleProblem {
     ///
     /// Parameters
     /// ----------
-    /// - action : list of str
-    ///     - Action name followed by the type of its arguments.
-    /// - conditions : list of list of str
-    ///     - List of preconditions for this action. A precondition has one of the following format:
-    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
-    ///           where `pos_argi` is the position of the argument in `action`.
-    ///         - `[name, arg1, arg2, ..., value]`
-    ///           where `arg1` is the value of a contant argument.
-    /// - effects : list of list of str
-    ///     - List of effects done by this action. An effect has one of the following format:
-    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
-    ///           where `pos_argi` is the position of the argument in `action`.
-    ///         - `[name, arg1, arg2, ..., value]`
-    ///           where `arg1` is the value of a contant argument.
-    fn add_action(&mut self, action: Vec<&str>, conditions: Vec<Vec<&str>>, effects: Vec<Vec<&str>>) {
-        self.add_template(
-            action,                // Sign
-            ChronicleKind::Action, // Template type
-            None,                  // Duration
-            Some(conditions),      // Conditions
-            None,                  // Timed conditions
-            Some(effects),         // Effects
-            None,                  // Timed effects
-            None,                  // Task
-            None,                  // Subtasks
-            None,                  // Subtasks orders
-            None,                  // Grounded task
-            None,                  // Grounded subtasks
-            None,                  // Grounded subtasks orders
-        );
-    }
-
-    /// Allows the user to add a durative action.
-    ///
-    /// Parameters
-    /// ----------
-    /// - action : list of str
-    ///     - Action name followed by the type of its arguments.
-    /// - duration : i32
-    ///     - Duration of the durative action.
-    /// - conditions : list of list of str
-    ///     - List of conditions for a durative action. A condition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
-    ///     where `pos_argi` is the position of the argument in `action` and `when` is in `["start", "end", "over all"]`.
-    /// - effects : list of list of str
-    ///     - List of effects for a durative action. An effect has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
-    ///     where `pos_argi` is the position of the argument in `action` and `when` is in `["start", "end", "over all"]`.
-    fn add_durative_action(
-        &mut self,
-        action: Vec<&str>,
-        duration: i32,
-        conditions: Vec<Vec<&str>>,
-        effects: Vec<Vec<&str>>,
-    ) {
-        self.add_template(
-            action,                        // Sign
-            ChronicleKind::DurativeAction, // Template type
-            Some(duration),                // Duration
-            None,                          // Conditions
-            Some(conditions),              // Timed conditions
-            None,                          // Effects
-            Some(effects),                 // Timed effects
-            None,                          // Task
-            None,                          // Subtasks
-            None,                          // Subtasks orders
-            None,                          // Grounded task
-            None,                          // Grounded subtasks
-            None,                          // Grounded subtasks orders
-        );
+    /// - action : TempSign
+    ///     - Signature of the action.
+    /// - constraints : list of Constr
+    ///     - List of generic and temporal constraints over the variables in the signature.
+    /// - conditions : list of Cond
+    ///     - List of preconditions of the action.
+    /// - effects : list of Eff
+    ///     - List of effects of the action.
+    fn add_action(&mut self, action: TempSign, constraints: Vec<Constr>, conditions: Vec<Cond>, effects: Vec<Eff>) {
+        self.add_template(action, constraints, conditions, effects, None, None, None);
     }
 
     /// Allows the user to add a method.
     ///
     /// Parameters
     /// ----------
-    /// - method : list of str
-    ///     - Method name followed by the type of its arguments.
-    /// - task : list of str
-    ///     - Task name followed by the position of the arguments in `method`.
-    /// - conditions : list of list of str
-    ///     - List of conditions for a durative action. A condition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `method`.
-    /// - subtasks : list of list of str
-    ///     - List of the subtasks done by this method.
-    ///     A subtasks is the subtask name followed by the position of the arguments in `method`.
-    /// - subtasks_orders : list of list of int
-    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
+    /// - method : TempSign
+    ///     - Signature of the method.
+    /// - constraints : list of Constr
+    ///     - List of generic and temporal constraints over the variables in the signature.
+    /// - conditions : list of Cond
+    ///     - List of preconditions of the template.
+    /// - task : TempSign
+    ///     - Signature of the task achieved by the template.
+    /// - subtasks : list of TempSign
+    ///     - List of the requiered tasks in order to achieve the `task`.
+    /// - subtasks_constraints : list of TemporalConstraint
+    ///     - List of temporal constraint between the subtasks.
     fn add_method(
         &mut self,
-        method: Vec<&str>,
-        task: Vec<&str>,
-        conditions: Vec<Vec<&str>>,
-        subtasks: Vec<Vec<&str>>,
-        subtasks_orders: Vec<Vec<usize>>,
+        method: TempSign,
+        constraints: Vec<Constr>,
+        conditions: Vec<Cond>,
+        task: TempSign,
+        subtasks: Vec<TempSign>,
+        subtasks_constraints: Vec<TemporalConstraint>,
     ) {
         self.add_template(
-            method,                // Sign
-            ChronicleKind::Method, // Template type
-            None,                  // Duration
-            Some(conditions),      // Conditions
-            None,                  // Timed conditions
-            None,                  // Effects
-            None,                  // Timed effects
-            Some(task),            // Task
-            Some(subtasks),        // Subtasks
-            Some(subtasks_orders), // Subtasks orders
-            None,                  // Grounded task
-            None,                  // Grounded subtasks
-            None,                  // Grounded subtasks orders
-        );
-    }
-
-    /// Allows the user to add a grounded method.
-    ///
-    /// Parameters
-    /// ----------
-    /// - method : list of str
-    ///     - Method name followed by the type of its arguments.
-    /// - task : list of str
-    ///     - Task name followed by its constant parameters.
-    /// - conditions : list of list of str
-    ///     - List of conditions for a durative action. A condition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value]`
-    ///     where `pos_argi` is the position of the argument in `method`.
-    /// - subtasks : list of list of str
-    ///     - List of the subtasks done by this method.
-    ///     A subtasks is the subtask name followed by its constant parameters.
-    /// - subtasks_orders : list of list of int
-    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
-    fn add_grounded_method(
-        &mut self,
-        method: Vec<&str>,
-        task: Vec<&str>,
-        conditions: Vec<Vec<&str>>,
-        subtasks: Vec<Vec<&str>>,
-        subtasks_orders: Vec<Vec<usize>>,
-    ) {
-        self.add_template(
-            method,                // Sign
-            ChronicleKind::Method, // Template type
-            None,                  // Duration
-            Some(conditions),      // Conditions
-            None,                  // Timed conditions
-            None,                  // Effects
-            None,                  // Timed effects
-            None,                  // Task
-            None,                  // Subtasks
-            None,                  // Subtasks orders
-            Some(task),            // Grounded task
-            Some(subtasks),        // Grounded subtasks
-            Some(subtasks_orders), // Grounded subtasks orders
+            method,
+            constraints,
+            conditions,
+            vec![],
+            Some(task),
+            Some(subtasks),
+            Some(subtasks_constraints),
         )
     }
 
@@ -460,11 +295,20 @@ impl ChronicleProblem {
     ///
     /// Parameters
     /// ----------
-    /// - htn : bool
-    ///     - Whether or not the problem is hierarchical.
     /// - output_file : str
     ///     - Path to the output file where the plan will be saved.
-    fn solve(&self, htn: bool, output_file: &str) {
+    fn solve(&self, output_file: &str) {
+        println!("======= Chronicle =======");
+        println!("{:?}", self.init_ch);
+        println!("=========================");
+
+        println!("======= Templates =======");
+        for template in self.templates.to_vec() {
+            println!("{:?}", template.chronicle);
+            println!("==========");
+        }
+        println!("=========================");
+
         run_problem(
             &mut Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -475,7 +319,6 @@ impl ChronicleProblem {
                     chronicle: self.init_ch.as_ref().unwrap().clone(),
                 }],
             },
-            htn,
             output_file,
         );
     }
@@ -487,173 +330,131 @@ impl ChronicleProblem {
     ///
     /// Parameters
     /// ----------
-    /// - sym : str
-    ///     - The symbol of the state variable.
-    /// - args : list of str
-    ///     - The types of the state variable arguments.
+    /// - sign : Sign
+    ///     - The signature of the state variable.
     /// - return_type : Type
     ///     - The type of the state variable:
     ///         - Type::Bool for a predicate
     ///         - Type::Int for a function
-    fn add_state_variable(&mut self, sym: &str, args: Vec<&str>, return_type: Type) {
+    fn add_state_variable(&mut self, sign: Sign, return_type: Type) {
         let symbol_table = self.symbol_table.as_ref().unwrap();
-        let symbol = symbol_table.id(sym).unwrap();
+        let sym = symbol_table.id(&sign[0]).unwrap();
         let mut tpe = vec![];
-        for arg in args {
-            tpe.push(Type::Sym(symbol_table.types.id_of(arg).unwrap()));
+        for arg in sign.iter().skip(1) {
+            // arg is of the form "value - type"
+            let value_tpe: Vec<&str> = arg.split(" - ").collect();
+            tpe.push(Type::Sym(symbol_table.types.id_of(value_tpe[1]).unwrap()));
         }
         tpe.push(return_type);
-        self.state_variables.push(StateFun { sym: symbol, tpe });
+        self.state_variables.push(StateFun { sym, tpe });
     }
 
-    /// Parameters
-    /// ----------
-    /// - sign : list of str
-    ///     - The signature to find.
-    ///       It is composed of the name followed by the arguments.
-    ///
-    /// Returns
-    /// -------
-    /// - list of `SAtom`
-    ///     - The `SAtom`s corresponding to the signature.
-    fn satom_from_signature(&mut self, sign: Vec<&str>) -> Vec<SAtom> {
-        let context = self.context.as_ref().unwrap();
-        let mut sv: Vec<SAtom> = vec![];
-        for var in sign {
-            sv.push(
-                context
-                    .typed_sym(context.model.get_symbol_table().id(var).unwrap())
-                    .into(),
-            );
-        }
-        sv
-    }
-
-    /// Generic method to add a template (i.e. action, durative_action, method).
+    /// Generic method to add a template (i.e. action or method).
     ///
     /// Parameters
     /// ----------
-    /// - sign : list of str
-    ///     - Template name followed by the type of its arguments.
-    /// - template_type : ChronicleKind
-    ///     - Defines if the template is an action, a durative action or a method.
-    /// - duration : i32, optional
-    ///     - The duration for a durative action.
-    /// - conditions : list of list of str, optional
-    ///     - List of preconditions. A precondition has one of the following format:
-    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
-    ///           where `pos_argi` is the position of the argument in `sign`.
-    ///         - `[name, arg1, arg2, ..., value]`
-    ///           where `arg1` is the value of a contant argument.
-    /// - timed_conditions : list of list of str, optional
-    ///     - List of conditions for a durative action. A condition has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
-    ///     where `pos_argi` is the position of the argument in `sign` and `when` is in `["start", "end", "over all"]`.
-    /// - effects : list of list of str, optional
-    ///     - List of effects. An effect has one of the following format:
-    ///         - `[name, pos_arg1, pos_arg2, ..., value]`
-    ///           where `pos_argi` is the position of the argument in `sign`.
-    ///         - `[name, arg1, arg2, ..., value]`
-    ///           where `arg1` is the value of a contant argument.
-    /// - timed_effects : list of list of str, optional
-    ///     - List of effects for a durative action. An effect has the following format:
-    ///     `[name, pos_arg1, pos_arg2, ..., value, when]`
-    ///     where `pos_argi` is the position of the argument in `sign` and `when` is in `["start", "end", "over all"]`.
-    /// - task : list of str, optional
-    ///     - Task name followed by the position of the arguments in `method`.
-    /// - subtasks : list of list of str
-    ///     - List of the subtasks done by this method.
-    ///     A subtask is the subtask name followed by the position of the arguments in `method`.
-    /// - subtasks_orders : list of list of int
-    ///     - Each list defines the order of the subtasks with their position in `subtasks`.
-    /// - grounded_task : list of str, optional
-    ///     - Grounded task name followed by the constant parameters.
-    /// - grounded_subtasks : list of list of str
-    ///     - List of the subtasks done by this method.
-    ///     A subtask is the subtask name followed by its constant parameters.
-    /// - grounded_subtasks_orders : list of list of int
-    ///     - Each list defines the order of the subtasks with their position in `grounded_subtasks`.
+    /// - sign : Sign
+    ///     - Signature of the template.
+    /// - constraints : list of Constr
+    ///     - List of generic and temporal constraints over the variables in the signature.
+    /// - conditions : list of Cond
+    ///     - List of preconditions of the template.
+    /// - effects : list of Eff
+    ///     - List of effects of the template.
+    /// - task : Sign, optional
+    ///     - Signature of the task achieved by the template.
+    /// - subtasks : list of Sign, optional
+    ///     - List of the requiered tasks in order to achieve the `task`.
+    /// - subtasks_constraints : list of TemporalConstraint, optional
+    ///     - List of temporal constraint between the subtasks.
     fn add_template(
         &mut self,
-        sign: Vec<&str>,
-        template_type: ChronicleKind,
-        duration: Option<i32>,
-        conditions: Option<Vec<Vec<&str>>>,
-        timed_conditions: Option<Vec<Vec<&str>>>,
-        effects: Option<Vec<Vec<&str>>>,
-        timed_effects: Option<Vec<Vec<&str>>>,
-        task: Option<Vec<&str>>,
-        subtasks: Option<Vec<Vec<&str>>>,
-        subtasks_orders: Option<Vec<Vec<usize>>>,
-        grounded_task: Option<Vec<&str>>,
-        grounded_subtasks: Option<Vec<Vec<&str>>>,
-        grounded_subtasks_orders: Option<Vec<Vec<usize>>>,
+        mut sign: TempSign,
+        constraints: Vec<Constr>,
+        conditions: Vec<Cond>,
+        effects: Vec<Eff>,
+        task: Option<Sign>,
+        subtasks: Option<Vec<TempSign>>,
+        subtasks_constraints: Option<Vec<TemporalConstraint>>,
     ) {
         let context = self.context.as_mut().unwrap();
-
+        let kind = if task.is_none() {
+            ChronicleKind::Action
+        } else {
+            ChronicleKind::Method
+        };
         let c = Container::Template(self.templates.len());
         let mut params: Vec<Variable> = vec![];
+        let mut args: HashMap<&str, SAtom> = HashMap::new();
 
         // Presence
-        let prez_var = context.model.new_bvar(c / VarType::Presence);
-        params.push(prez_var.into());
-        let prez = prez_var.true_lit();
+        let prez = context.model.new_bvar(c / VarType::Presence);
+        params.push(prez.into());
+        let prez = prez.true_lit();
 
-        // Start & End
+        // Start & End from signature
+        let ch_sign_end: String = sign.pop().unwrap();
+        let ch_sign_end: Vec<&str> = ch_sign_end.split(" - ").collect::<Vec<&str>>()[0]
+            .split(" + ")
+            .collect();
+        let ch_value_end: &str = ch_sign_end[0];
+        let ch_delay_end: i32 = ch_sign_end[1].parse().unwrap();
+        let ch_sign_start: String = sign.pop().unwrap();
+        let ch_sign_start: Vec<&str> = ch_sign_start.split(" - ").collect::<Vec<&str>>()[0]
+            .split(" + ")
+            .collect();
+        let ch_value_start: &str = ch_sign_start[0];
+        let ch_delay_start: i32 = ch_sign_start[1].parse().unwrap();
+
+        // Start & End of chronicle
         let start = context
             .model
             .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleStart);
         params.push(start.into());
-        let start = FAtom::from(start);
-        let end: FAtom = match template_type {
-            ChronicleKind::Problem => panic!("unsupported case"),
-            ChronicleKind::Method | ChronicleKind::DurativeAction => {
-                let end = context
-                    .model
-                    .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
-                params.push(end.into());
-                end.into()
-            }
-            ChronicleKind::Action => start + FAtom::EPSILON,
-        };
+        let start = FAtom::from(start) + ch_delay_start;
 
-        // Name & arguments
+        let end: FAtom = if ch_value_start == ch_value_end {
+            start + FAtom::EPSILON
+        } else {
+            let end = context
+                .model
+                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
+            params.push(end.into());
+            end.into()
+        } + ch_delay_end;
+
+        // Name & Parameters
         let mut name: Vec<SAtom> = vec![context
-            .typed_sym(context.model.get_symbol_table().id(sign[0]).unwrap())
+            .typed_sym(context.model.get_symbol_table().id(&sign[0]).unwrap())
             .into()];
-        for s in sign.iter().skip(1) {
-            if let Some(var_type) = context.model.get_symbol_table().types.id_of(*s) {
-                let arg = context
+        for arg in sign.iter().skip(1) {
+            let sign_arg: Vec<&str> = arg.split(" - ").collect();
+            let value_arg: &str = sign_arg[0];
+            let type_arg: &str = sign_arg[1];
+            let is_constant: bool = *self.constants.get(value_arg).unwrap_or(&false);
+            if is_constant {
+                let argument = context.typed_sym(context.model.get_symbol_table().id(value_arg).unwrap());
+                args.insert(value_arg, argument.into());
+                name.push(argument.into());
+            } else {
+                let var_type = context.model.get_symbol_table().types.id_of(type_arg).unwrap();
+                let argument = context
                     .model
                     .new_optional_sym_var(var_type, prez, c / VarType::Parameter);
-                params.push(arg.into());
-                name.push(arg.into());
-            } else {
-                name.push(
-                    context
-                        .typed_sym(context.model.get_symbol_table().id(*s).unwrap())
-                        .into(),
-                );
+                args.insert(value_arg, argument.into());
+                params.push(argument.into());
+                name.push(argument.into());
             }
         }
 
         // Task
-        let task = if let Some(task) = task {
-            let mut tn = vec![context
-                .typed_sym(context.model.get_symbol_table().id(task[0]).unwrap())
+        let task: Vec<SAtom> = if let Some(task) = task {
+            let mut tn: Vec<SAtom> = vec![context
+                .typed_sym(context.model.get_symbol_table().id(&task[0]).unwrap())
                 .into()];
-            for i in 1..task.len() {
-                tn.push(name[task[i].parse::<usize>().unwrap()]);
-            }
-            tn
-        } else if let Some(task) = grounded_task {
-            let mut tn = vec![];
-            for arg in task {
-                tn.push(
-                    context
-                        .typed_sym(context.model.get_symbol_table().id(arg).unwrap())
-                        .into(),
-                );
+            for arg in task.iter().skip(1) {
+                let value_arg = arg.split(" - ").collect::<Vec<&str>>()[0];
+                tn.push(*args.get(value_arg).unwrap());
             }
             tn
         } else {
@@ -662,7 +463,7 @@ impl ChronicleProblem {
 
         // Chronicle
         let mut ch = Chronicle {
-            kind: template_type,
+            kind,
             presence: prez,
             start,
             end,
@@ -674,187 +475,278 @@ impl ChronicleProblem {
             subtasks: vec![],
         };
 
-        // Effects
-        if let Some(effects) = effects {
-            for effect in effects {
-                let mut sv: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(effect[0]).unwrap())
-                    .into()];
-                for i in 1..effect.len() - 1 {
-                    if let Ok(index) = effect[i].parse::<usize>() {
-                        sv.push(name[index]);
-                    } else {
-                        sv.push(
-                            context
-                                .typed_sym(context.model.get_symbol_table().id(effect[i]).unwrap())
-                                .into(),
-                        );
-                    }
-                }
-                ch.effects.push(Effect {
-                    transition_start: ch.start,
-                    persistence_start: ch.end,
-                    state_var: sv,
-                    value: effect[effect.len() - 1].parse::<bool>().unwrap().into(),
-                });
-            }
-        };
+        // Effect
+        for mut effect in effects {
+            let sign_end: String = effect.pop().unwrap();
+            let sign_end: Vec<&str> = sign_end.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+            let value_end: &str = sign_end[0];
+            let delay_end: i32 = sign_end[1].parse().unwrap();
+            let sign_start: String = effect.pop().unwrap();
+            let sign_start: Vec<&str> = sign_start.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+            let value_start: &str = sign_start[0];
+            let delay_start: i32 = sign_start[1].parse().unwrap();
+            let value: bool = effect.pop().unwrap().to_lowercase().parse().unwrap();
 
-        // Timed effects
-        if let Some(effects) = timed_effects {
-            for effect in effects {
-                let mut sv: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(effect[0]).unwrap())
-                    .into()];
-                for i in 1..effect.len() - 2 {
-                    sv.push(name[effect[i].parse::<usize>().unwrap()]);
-                }
-                let time = match effect[effect.len() - 1] {
-                    "start" => ch.start,
-                    "end" => ch.end,
-                    _ => ch.start,
-                };
-                ch.effects.push(Effect {
-                    transition_start: time,
-                    persistence_start: time + FAtom::EPSILON,
-                    state_var: sv,
-                    value: effect[effect.len() - 2].parse::<bool>().unwrap().into(),
-                });
+            let mut sv: Vec<SAtom> = vec![context
+                .typed_sym(context.model.get_symbol_table().id(&effect[0]).unwrap())
+                .into()];
+            for arg in effect.iter().skip(1) {
+                let value_arg = arg.split(" - ").collect::<Vec<&str>>()[0];
+                sv.push(*args.get(value_arg).unwrap());
             }
-        };
+
+            let start = if value_start == "__start__" || value_start == "__now__" || value_start == ch_value_start {
+                ch.start
+            } else if value_start == "__end__" || value_start == ch_value_end {
+                ch.end
+            } else {
+                panic!("unsupported start case: {}", value_start);
+            };
+
+            let end = if value_end == "__end__" || value_end == "__now__" || value_end == ch_value_end {
+                ch.end
+            } else if value_end == "__start__" || value_end == ch_value_start {
+                ch.start + FAtom::EPSILON
+            } else {
+                panic!("unsupported end case: {}", value_end);
+            };
+
+            ch.effects.push(Effect {
+                transition_start: start + delay_start,
+                persistence_start: end + delay_end,
+                state_var: sv,
+                value: value.into(),
+            });
+        }
 
         // Conditions
-        if let Some(conditions) = conditions {
-            for condition in conditions {
-                let mut sv: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(condition[0]).unwrap())
-                    .into()];
-                for i in 1..condition.len() - 1 {
-                    if let Ok(index) = condition[i].parse::<usize>() {
-                        sv.push(name[index]);
-                    } else {
-                        sv.push(
-                            context
-                                .typed_sym(context.model.get_symbol_table().id(condition[i]).unwrap())
-                                .into(),
-                        );
-                    }
-                }
-                let has_effect_on_same_state_variable = ch
-                    .effects
-                    .iter()
-                    .map(|e| e.state_var.as_slice())
-                    .any(|x| x == sv.as_slice());
-                let end = if has_effect_on_same_state_variable || template_type == ChronicleKind::Method {
+        for mut condition in conditions {
+            let sign_end: String = condition.pop().unwrap();
+            let sign_end: Vec<&str> = sign_end.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+            let value_end: &str = sign_end[0];
+            let delay_end: i32 = sign_end[1].parse().unwrap();
+            let sign_start: String = condition.pop().unwrap();
+            let sign_start: Vec<&str> = sign_start.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
+            let value_start: &str = sign_start[0];
+            let delay_start: i32 = sign_start[1].parse().unwrap();
+            let value: bool = condition.pop().unwrap().to_lowercase().parse().unwrap();
+
+            let mut sv: Vec<SAtom> = vec![context
+                .typed_sym(context.model.get_symbol_table().id(&condition[0]).unwrap())
+                .into()];
+            for arg in condition.iter().skip(1) {
+                let value_arg = arg.split(" - ").collect::<Vec<&str>>()[0];
+                sv.push(*args.get(value_arg).unwrap());
+            }
+
+            let has_effect_on_same_state_variable = ch
+                .effects
+                .iter()
+                .map(|e| e.state_var.as_slice())
+                .any(|x| x == sv.as_slice());
+
+            let start = if value_start == "__start__" || value_start == "__now__" || value_start == ch_value_start {
+                ch.start
+            } else if value_start == "__end__" || value_start == ch_value_end {
+                ch.end
+            } else {
+                panic!("unsupported start case: {}", value_start);
+            };
+
+            let end = if value_end == "__end__" || value_end == ch_value_end {
+                ch.end
+            } else if value_end == "__start__" || value_end == ch_value_start {
+                ch.start
+            } else if value_end == "__now__" {
+                if kind == ChronicleKind::Method || has_effect_on_same_state_variable {
                     ch.start
                 } else {
                     ch.end
-                };
-                ch.conditions.push(Condition {
-                    start: ch.start,
-                    end,
-                    state_var: sv,
-                    value: condition[condition.len() - 1].parse::<bool>().unwrap().into(),
-                });
-            }
-        }
-
-        // Timed conditions
-        if let Some(conditions) = timed_conditions {
-            for condition in conditions {
-                let mut sv: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(condition[0]).unwrap())
-                    .into()];
-                for i in 1..condition.len() - 2 {
-                    sv.push(name[condition[i].parse::<usize>().unwrap()]);
                 }
-                let time = condition[condition.len() - 1];
-                let start = match time {
-                    "start" => ch.start,
-                    "end" => ch.end,
-                    "over all" => ch.start,
-                    _ => ch.start,
-                };
-                let end = match time {
-                    "start" => ch.start,
-                    "end" => ch.end,
-                    "over all" => ch.end,
-                    _ => ch.end,
-                };
-                ch.conditions.push(Condition {
-                    start,
-                    end,
-                    state_var: sv,
-                    value: condition[condition.len() - 2].parse::<bool>().unwrap().into(),
-                });
-            }
+            } else {
+                panic!("unsupported end case: {}", value_end);
+            };
+
+            ch.conditions.push(Condition {
+                start: start + delay_start,
+                end: end + delay_end,
+                state_var: sv,
+                value: value.into(),
+            });
         }
 
-        // Duration
-        if let Some(duration) = duration {
-            ch.constraints.push(Constraint::duration(duration));
+        // Constraints
+        for constraint in constraints {
+            let left_value: Vec<&str> = constraint[0].split(" - ").collect();
+            let left_type: &str = left_value[1];
+            let left_value: &str = left_value[0];
+            let right_value: Vec<&str> = constraint[2].split(" - ").collect();
+            let right_type: &str = right_value[1];
+            let right_value: &str = right_value[0];
+            let relation: &str = &constraint[1];
+
+            if left_type != right_type {
+                panic!(
+                    "cannot create a constraint between different types: {} and {}",
+                    left_type, right_type
+                );
+            }
+
+            let constr: Constraint;
+            if left_type == "__timepoint__" {
+                let left_var: Vec<&str> = left_value.split(" + ").collect();
+                let left_delay: i32 = left_var[1].parse().unwrap();
+                let left_value: FAtom = if left_var[0] == "__start__" {
+                    ch.start
+                } else if left_var[0] == "__end__" {
+                    ch.end
+                } else {
+                    panic!("unsupported start case: {}", left_var[0]);
+                };
+
+                let right_var: Vec<&str> = right_value.split(" + ").collect();
+                let right_delay: i32 = right_var[1].parse().unwrap();
+                let right_value: FAtom = if right_var[0] == "__start__" {
+                    ch.start
+                } else if right_var[0] == "__end__" {
+                    ch.end
+                } else {
+                    panic!("unsupported start case: {}", right_var[0]);
+                };
+
+                constr = if relation == "==" {
+                    Constraint::eq(left_value + left_delay, right_value + right_delay)
+                } else if relation == "!=" {
+                    Constraint::neq(left_value + left_delay, right_value + right_delay)
+                } else if relation == "<" {
+                    Constraint::lt(left_value + left_delay, right_value + right_delay)
+                } else if relation == ">" {
+                    Constraint::lt(right_value + right_delay, left_value + left_delay)
+                } else if relation == "<=" {
+                    Constraint::lt(left_value + left_delay, right_value + right_delay + FAtom::EPSILON)
+                } else if relation == ">=" {
+                    Constraint::lt(right_value + right_delay, left_value + left_delay + FAtom::EPSILON)
+                } else {
+                    panic!("unknow relation {}", relation);
+                };
+            } else {
+                let left_var: SAtom = *args.get(left_value).unwrap();
+                let right_var: SAtom = *args.get(right_value).unwrap();
+
+                constr = if relation == "==" {
+                    Constraint::eq(left_var, right_var)
+                } else if relation == "!=" {
+                    Constraint::neq(left_var, right_var)
+                } else {
+                    panic!("unsupported relation {} for no timepoints", relation);
+                };
+            }
+
+            ch.constraints.push(constr);
         }
 
         // Subtasks
         if let Some(subtasks) = subtasks {
-            let mut tasks = vec![];
-            for subtask in subtasks {
-                let mut tn: Vec<SAtom> = vec![context
-                    .typed_sym(context.model.get_symbol_table().id(subtask[0]).unwrap())
-                    .into()];
-                for i in 1..subtask.len() {
-                    tn.push(name[subtask[i].parse::<usize>().unwrap()]);
-                }
-                let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
-                tasks.push((st.start, st.end));
-                ch.subtasks.push(st);
-            }
-
-            if let Some(orders) = subtasks_orders {
-                for order in orders {
-                    for i in 0..order.len() - 1 {
-                        let first_end = tasks[order[i]].1;
-                        let second_start = tasks[order[i + 1]].0;
-                        ch.constraints.push(Constraint::lt(first_end, second_start));
-                    }
-                }
+            if let Some(subtasks_constraints) = subtasks_constraints {
+                add_task_network(c, &mut ch, context, Some(args), subtasks, subtasks_constraints);
             }
         }
 
-        // Grounded subtasks
-        if let Some(subtasks) = grounded_subtasks {
-            let mut tasks = vec![];
-            for subtask in subtasks {
-                let mut tn = vec![];
-                for arg in subtask {
-                    tn.push(
-                        context
-                            .typed_sym(context.model.get_symbol_table().id(arg).unwrap())
-                            .into(),
-                    );
-                }
-                let st = create_subtask(context, c, ch.presence, Some(&mut params), tn);
-                tasks.push((st.start, st.end));
-                ch.subtasks.push(st);
-            }
-
-            if let Some(orders) = grounded_subtasks_orders {
-                for order in orders {
-                    for i in 0..order.len() - 1 {
-                        let first_end = tasks[order[i]].1;
-                        let second_start = tasks[order[i + 1]].0;
-                        ch.constraints.push(Constraint::lt(first_end, second_start));
-                    }
-                }
-            }
-        };
-
         // Creation
         self.templates.push(ChronicleTemplate {
-            label: Some(sign[0].into()),
+            label: Some(sign[0].clone()),
             parameters: params,
             chronicle: ch,
         });
+    }
+}
+
+/// Add a new task network with constraints to the given chronicle.
+///
+/// Parameters
+/// ----------
+/// - c : Container
+///     - Container used for the subtasks creations.
+/// - ch : Chronicle
+///     - Chronicle where the task network will be added.
+/// - context : Ctx
+///     - The contet of the problem.
+/// - args: HashMap<&str, SAtom>, optional
+///     - Mapping of an argument value with its associated SAtom.
+/// - tasks : list of TempSign
+///     - List of task temporal signatures of the task network.
+/// - constraints : list of temporal constraints
+///     - List of temporal constraints between the tasks of the task network.
+fn add_task_network(
+    c: Container,
+    ch: &mut Chronicle,
+    context: &mut Ctx,
+    args: Option<HashMap<&str, SAtom>>,
+    tasks: Vec<TempSign>,
+    constraints: Vec<TemporalConstraint>,
+) {
+    let mut task_starts: HashMap<String, FAtom> = HashMap::new();
+    let mut task_ends: HashMap<String, FAtom> = HashMap::new();
+
+    for mut task in tasks {
+        let end = task.pop().unwrap();
+        let start = task.pop().unwrap();
+        let tn = if let Some(args) = args.clone() {
+            let mut tn = vec![context
+                .typed_sym(context.model.get_symbol_table().id(&task[0]).unwrap())
+                .into()];
+            for arg in task.iter().skip(1) {
+                let value_arg = arg.split(" - ").collect::<Vec<&str>>()[0];
+                tn.push(*args.get(value_arg).unwrap());
+            }
+            tn
+        } else {
+            satom_from_signature(context, task)
+        };
+        let prez = ch.presence;
+        let st = create_subtask(context, c, prez, None, tn);
+        task_ends.insert(end, st.end);
+        task_starts.insert(start, st.start);
+        ch.subtasks.push(st);
+    }
+
+    for constraint in constraints {
+        let first_delay: i32 = constraint[0].split(" - ").collect::<Vec<&str>>()[0]
+            .split(" + ")
+            .collect::<Vec<&str>>()[1]
+            .parse()
+            .unwrap();
+        let second_delay: i32 = constraint[2].split(" - ").collect::<Vec<&str>>()[0]
+            .split(" + ")
+            .collect::<Vec<&str>>()[1]
+            .parse()
+            .unwrap();
+        let relation = &constraint[1];
+
+        let first_atom: FAtom = *task_starts
+            .get(&constraint[0])
+            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap());
+        let second_atom: FAtom = *task_starts
+            .get(&constraint[2])
+            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap());
+
+        let new_constraint = if relation == "==" {
+            Constraint::eq(first_atom + first_delay, second_atom + second_delay)
+        } else if relation == "!=" {
+            Constraint::neq(first_atom + first_delay, second_atom + second_delay)
+        } else if relation == "<" {
+            Constraint::lt(first_atom + first_delay, second_atom + second_delay)
+        } else if relation == ">" {
+            Constraint::lt(first_atom + second_delay, second_atom + first_delay)
+        } else if relation == "<=" {
+            Constraint::lt(first_atom + first_delay, second_atom + second_delay + FAtom::EPSILON)
+        } else if relation == ">=" {
+            Constraint::lt(first_atom + second_delay, second_atom + first_delay + FAtom::EPSILON)
+        } else {
+            panic!("unknow relation {}", relation);
+        };
+
+        ch.constraints.push(new_constraint);
     }
 }
 
@@ -862,10 +754,13 @@ impl ChronicleProblem {
 ///
 /// Parameters
 /// ----------
-/// - goal : bool
-///     - Whether or not the task is for the goal.
+/// - context : Ctx
+///     - The contet of the problem.
 /// - c : Container
-/// - params : list of variable, optional
+///     - Container used for the subtasks creations.
+/// - pres : Lit
+///     - Whether or not the subtask is part of the solution.
+/// - params : list of Variable, optional
 ///     - Variables with which the solver will be able to interact.
 /// - task_name : list of SAtom
 ///     - The task to create with its name and its arguments.
@@ -898,6 +793,20 @@ fn create_subtask(
     }
 }
 
+/// Find the `SAtom` in the context, corresponding to the given signature.
+fn satom_from_signature(context: &mut Ctx, signature: Sign) -> Vec<SAtom> {
+    let mut sv: Vec<SAtom> = vec![];
+    for arg in signature {
+        let arg_value = arg.split(" - ").collect::<Vec<&str>>()[0];
+        sv.push(
+            context
+                .typed_sym(context.model.get_symbol_table().id(arg_value).unwrap())
+                .into(),
+        );
+    }
+    sv
+}
+
 /// A python module to generate a planning problem with chronicles.
 #[pymodule]
 fn chronicles(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -908,13 +817,13 @@ fn chronicles(_py: Python, m: &PyModule) -> PyResult<()> {
 
 //region Solver
 /// This part is mainly a copy of `aries/planners/src/bin/lcp.rs`
-fn run_problem(problem: &mut Problem, htn_mode: bool, output_file: &str) {
+fn run_problem(problem: &mut Problem, output_file: &str) {
     println!("===== Preprocessing ======");
     aries_planning::chronicles::preprocessing::preprocess(problem);
     println!("==========================");
 
     let max_depth = u32::MAX;
-    let min_depth = if htn_mode && hierarchical_is_non_recursive(problem) {
+    let min_depth = if hierarchical_is_non_recursive(problem) {
         max_depth // non recursive htn: bounded size, go directly to max
     } else {
         0
@@ -935,30 +844,22 @@ fn run_problem(problem: &mut Problem, htn_mode: bool, output_file: &str) {
             chronicles: problem.chronicles.clone(),
             tables: problem.context.tables.clone(),
         };
-        if htn_mode {
-            populate_with_task_network(&mut pb, problem, n).unwrap();
-        } else {
-            populate_with_template_instances(&mut pb, problem, |_| Some(n)).unwrap();
-        }
+        populate_with_task_network(&mut pb, problem, n).unwrap();
         println!("  [{:.3}s] Populated", start.elapsed().as_secs_f32());
         let start = Instant::now();
-        let result = solve(&pb, htn_mode);
+        let result = solve(&pb);
         println!("  [{:.3}s] solved", start.elapsed().as_secs_f32());
         if let Some(x) = result {
             // println!("{}", format_partial_plan(&pb, &x)?);
             println!("  Solution found");
-            let plan = if htn_mode {
-                format!(
-                    "\n**** Decomposition ****\n\n\
+            let plan = format!(
+                "\n**** Decomposition ****\n\n\
                     {}\n\n\
                     **** Plan ****\n\n\
                     {}",
-                    format_hddl_plan(&pb, &x).unwrap(),
-                    format_pddl_plan(&pb, &x).unwrap()
-                )
-            } else {
+                format_hddl_plan(&pb, &x).unwrap(),
                 format_pddl_plan(&pb, &x).unwrap()
-            };
+            );
             println!("{}", plan);
             let mut file = File::create(output_file).unwrap();
             file.write_all(plan.as_bytes()).unwrap();
@@ -981,8 +882,6 @@ fn init_solver(pb: &FiniteProblem) -> Box<Solver> {
 
 /// Default set of strategies for HTN problems
 const HTN_DEFAULT_STRATEGIES: [Strat; 2] = [Strat::Activity, Strat::Forward];
-/// Default set of strategies for generative (flat) problems.
-const GEN_DEFAULT_STRATEGIES: [Strat; 1] = [Strat::Activity];
 
 #[derive(Copy, Clone, Debug)]
 enum Strat {
@@ -1016,18 +915,11 @@ impl FromStr for Strat {
     }
 }
 
-fn solve(pb: &FiniteProblem, htn_mode: bool) -> Option<std::sync::Arc<SavedAssignment>> {
+fn solve(pb: &FiniteProblem) -> Option<std::sync::Arc<SavedAssignment>> {
     let solver = init_solver(pb);
-    let strats: &[Strat] = if htn_mode {
-        &HTN_DEFAULT_STRATEGIES
-    } else {
-        &GEN_DEFAULT_STRATEGIES
-    };
-    let mut solver = if htn_mode {
-        aries_solver::parallel_solver::ParSolver::new(solver, strats.len(), |id, s| strats[id].adapt_solver(s, pb))
-    } else {
-        ParSolver::new(solver, 1, |_, _| {})
-    };
+    let strats: &[Strat] = &HTN_DEFAULT_STRATEGIES;
+    let mut solver =
+        aries_solver::parallel_solver::ParSolver::new(solver, strats.len(), |id, s| strats[id].adapt_solver(s, pb));
 
     let found_plan = solver.solve().unwrap();
 
