@@ -5,7 +5,7 @@ use aries_model::lang::{FAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
 use aries_planners::encode::{encode, populate_with_task_network};
-use aries_planners::fmt::{format_hddl_plan, format_pddl_plan};
+use aries_planners::fmt::{format_hddl_plan, format_partial_plan, format_pddl_plan};
 use aries_planners::forward_search::ForwardSearcher;
 use aries_planners::Solver;
 use aries_planning::chronicles::analysis::hierarchical_is_non_recursive;
@@ -193,9 +193,10 @@ impl ChronicleProblem {
             self.init_ch.as_mut().unwrap(),
             self.context.as_mut().unwrap(),
             None,
+            &mut vec![],
             tasks,
             constraints,
-        )
+        );
     }
 
     /// Allows the user to add an initial effect, describing a part of the initial state.
@@ -215,17 +216,28 @@ impl ChronicleProblem {
         let sv = satom_from_signature(self.context.as_mut().unwrap(), effect);
         let ch = self.init_ch.as_mut().unwrap();
 
-        let start = if value_start == "__start__" || value_start == "__now__" {
+        let id_start = if value_start.len() >= 5 {
+            &value_start[..5]
+        } else {
+            value_start
+        };
+        let id_end = if value_end.len() >= 5 {
+            &value_end[..5]
+        } else {
+            value_end
+        };
+
+        let start = if id_start == "__s__" || id_start == "__d__" {
             ch.start
-        } else if value_start == "__end__" {
+        } else if id_start == "__e__" {
             ch.end
         } else {
             panic!("unsupported start case {}", value_start)
         };
 
-        let end = if value_end == "__end__" {
+        let end = if id_end == "__e__" {
             ch.end
-        } else if value_end == "__start__" || value_end == "__now__" {
+        } else if id_end == "__s__" || id_end == "__d__" {
             ch.start
         } else {
             panic!("unsupported end case {}", value_end)
@@ -298,17 +310,6 @@ impl ChronicleProblem {
     /// - output_file : str
     ///     - Path to the output file where the plan will be saved.
     fn solve(&self, output_file: &str) {
-        println!("======= Chronicle =======");
-        println!("{:?}", self.init_ch);
-        println!("=========================");
-
-        println!("======= Templates =======");
-        for template in self.templates.to_vec() {
-            println!("{:?}", template.chronicle);
-            println!("==========");
-        }
-        println!("=========================");
-
         run_problem(
             &mut Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -367,6 +368,7 @@ impl ChronicleProblem {
     ///     - List of the requiered tasks in order to achieve the `task`.
     /// - subtasks_constraints : list of TemporalConstraint, optional
     ///     - List of temporal constraint between the subtasks.
+    #[allow(clippy::too_many_arguments)] // this function has too many arguments (8/7)
     fn add_template(
         &mut self,
         mut sign: TempSign,
@@ -406,6 +408,12 @@ impl ChronicleProblem {
         let ch_value_start: &str = ch_sign_start[0];
         let ch_delay_start: i32 = ch_sign_start[1].parse().unwrap();
 
+        let ch_id_start: &str = if ch_value_start.len() >= 5 {
+            &ch_value_start[..5]
+        } else {
+            ch_value_start
+        };
+
         // Start & End of chronicle
         let start = context
             .model
@@ -413,7 +421,8 @@ impl ChronicleProblem {
         params.push(start.into());
         let start = FAtom::from(start) + ch_delay_start;
 
-        let end: FAtom = if ch_value_start == ch_value_end {
+        let end: FAtom = if ch_value_start == ch_value_end && (ch_id_start != "__d__" || kind == ChronicleKind::Action)
+        {
             start + FAtom::EPSILON
         } else {
             let end = context
@@ -487,6 +496,17 @@ impl ChronicleProblem {
             let delay_start: i32 = sign_start[1].parse().unwrap();
             let value: bool = effect.pop().unwrap().to_lowercase().parse().unwrap();
 
+            let id_start = if value_start.len() >= 5 {
+                &value_start[..5]
+            } else {
+                value_start
+            };
+            let id_end = if value_end.len() >= 5 {
+                &value_end[..5]
+            } else {
+                value_end
+            };
+
             let mut sv: Vec<SAtom> = vec![context
                 .typed_sym(context.model.get_symbol_table().id(&effect[0]).unwrap())
                 .into()];
@@ -495,17 +515,17 @@ impl ChronicleProblem {
                 sv.push(*args.get(value_arg).unwrap());
             }
 
-            let start = if value_start == "__start__" || value_start == "__now__" || value_start == ch_value_start {
+            let start = if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
                 ch.start
-            } else if value_start == "__end__" || value_start == ch_value_end {
+            } else if id_start == "__e__" || value_start == ch_value_end {
                 ch.end
             } else {
                 panic!("unsupported start case: {}", value_start);
             };
 
-            let end = if value_end == "__end__" || value_end == "__now__" || value_end == ch_value_end {
+            let end = if id_end == "__e__" || id_end == "__d__" || value_end == ch_value_end {
                 ch.end
-            } else if value_end == "__start__" || value_end == ch_value_start {
+            } else if id_end == "__s__" || value_end == ch_value_start {
                 ch.start + FAtom::EPSILON
             } else {
                 panic!("unsupported end case: {}", value_end);
@@ -531,6 +551,17 @@ impl ChronicleProblem {
             let delay_start: i32 = sign_start[1].parse().unwrap();
             let value: bool = condition.pop().unwrap().to_lowercase().parse().unwrap();
 
+            let id_start = if value_start.len() >= 5 {
+                &value_start[..5]
+            } else {
+                value_start
+            };
+            let id_end = if value_end.len() >= 5 {
+                &value_end[..5]
+            } else {
+                value_end
+            };
+
             let mut sv: Vec<SAtom> = vec![context
                 .typed_sym(context.model.get_symbol_table().id(&condition[0]).unwrap())
                 .into()];
@@ -545,19 +576,19 @@ impl ChronicleProblem {
                 .map(|e| e.state_var.as_slice())
                 .any(|x| x == sv.as_slice());
 
-            let start = if value_start == "__start__" || value_start == "__now__" || value_start == ch_value_start {
+            let start = if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
                 ch.start
-            } else if value_start == "__end__" || value_start == ch_value_end {
+            } else if id_start == "__e__" || value_start == ch_value_end {
                 ch.end
             } else {
                 panic!("unsupported start case: {}", value_start);
             };
 
-            let end = if value_end == "__end__" || value_end == ch_value_end {
+            let end = if id_end == "__e__" || value_end == ch_value_end {
                 ch.end
-            } else if value_end == "__start__" || value_end == ch_value_start {
+            } else if id_end == "__s__" || value_end == ch_value_start {
                 ch.start
-            } else if value_end == "__now__" {
+            } else if id_end == "__d__" {
                 if kind == ChronicleKind::Method || has_effect_on_same_state_variable {
                     ch.start
                 } else {
@@ -596,22 +627,22 @@ impl ChronicleProblem {
             if left_type == "__timepoint__" {
                 let left_var: Vec<&str> = left_value.split(" + ").collect();
                 let left_delay: i32 = left_var[1].parse().unwrap();
-                let left_value: FAtom = if left_var[0] == "__start__" {
+                let left_value: FAtom = if left_var[0] == "__s__" || left_var[0] == ch_value_start {
                     ch.start
-                } else if left_var[0] == "__end__" {
+                } else if left_var[0] == "__e__" || left_var[0] == ch_value_end {
                     ch.end
                 } else {
-                    panic!("unsupported start case: {}", left_var[0]);
+                    panic!("unsupported left case: {}", left_var[0]);
                 };
 
                 let right_var: Vec<&str> = right_value.split(" + ").collect();
                 let right_delay: i32 = right_var[1].parse().unwrap();
-                let right_value: FAtom = if right_var[0] == "__start__" {
+                let right_value: FAtom = if right_var[0] == "__s__" || right_var[0] == ch_value_start {
                     ch.start
-                } else if right_var[0] == "__end__" {
+                } else if right_var[0] == "__e__" || right_var[0] == ch_value_end {
                     ch.end
                 } else {
-                    panic!("unsupported start case: {}", right_var[0]);
+                    panic!("unsupported right case: {}", right_var[0]);
                 };
 
                 constr = if relation == "==" {
@@ -648,7 +679,15 @@ impl ChronicleProblem {
         // Subtasks
         if let Some(subtasks) = subtasks {
             if let Some(subtasks_constraints) = subtasks_constraints {
-                add_task_network(c, &mut ch, context, Some(args), subtasks, subtasks_constraints);
+                add_task_network(
+                    c,
+                    &mut ch,
+                    context,
+                    Some(args),
+                    &mut params,
+                    subtasks,
+                    subtasks_constraints,
+                );
             }
         }
 
@@ -682,6 +721,7 @@ fn add_task_network(
     ch: &mut Chronicle,
     context: &mut Ctx,
     args: Option<HashMap<&str, SAtom>>,
+    params: &mut Vec<Variable>,
     tasks: Vec<TempSign>,
     constraints: Vec<TemporalConstraint>,
 ) {
@@ -704,7 +744,7 @@ fn add_task_network(
             satom_from_signature(context, task)
         };
         let prez = ch.presence;
-        let st = create_subtask(context, c, prez, None, tn);
+        let st = create_subtask(context, c, prez, params, tn);
         task_ends.insert(end, st.end);
         task_starts.insert(start, st.start);
         ch.subtasks.push(st);
@@ -737,11 +777,11 @@ fn add_task_network(
         } else if relation == "<" {
             Constraint::lt(first_atom + first_delay, second_atom + second_delay)
         } else if relation == ">" {
-            Constraint::lt(first_atom + second_delay, second_atom + first_delay)
+            Constraint::lt(second_atom + second_delay, first_atom + first_delay)
         } else if relation == "<=" {
             Constraint::lt(first_atom + first_delay, second_atom + second_delay + FAtom::EPSILON)
         } else if relation == ">=" {
-            Constraint::lt(first_atom + second_delay, second_atom + first_delay + FAtom::EPSILON)
+            Constraint::lt(second_atom + second_delay, first_atom + first_delay + FAtom::EPSILON)
         } else {
             panic!("unknow relation {}", relation);
         };
@@ -769,7 +809,7 @@ fn create_subtask(
     context: &mut Ctx,
     c: Container,
     prez: Lit,
-    mut params: Option<&mut Vec<Variable>>,
+    params: &mut Vec<Variable>,
     task_name: Vec<SAtom>,
 ) -> SubTask {
     let start = context
@@ -778,9 +818,9 @@ fn create_subtask(
     let end = context
         .model
         .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskEnd);
-    if let Some(ref mut p) = params {
-        p.push(start.into());
-        p.push(end.into());
+    if !params.is_empty() {
+        params.push(start.into());
+        params.push(end.into());
     }
     let start = FAtom::from(start);
     let end = FAtom::from(end);
@@ -850,7 +890,7 @@ fn run_problem(problem: &mut Problem, output_file: &str) {
         let result = solve(&pb);
         println!("  [{:.3}s] solved", start.elapsed().as_secs_f32());
         if let Some(x) = result {
-            // println!("{}", format_partial_plan(&pb, &x)?);
+            propagate_and_print(&pb);
             println!("  Solution found");
             let plan = format!(
                 "\n**** Decomposition ****\n\n\
@@ -864,7 +904,19 @@ fn run_problem(problem: &mut Problem, output_file: &str) {
             let mut file = File::create(output_file).unwrap();
             file.write_all(plan.as_bytes()).unwrap();
             break;
+        } else {
+            println!("  No solution found");
         }
+    }
+}
+
+fn propagate_and_print(pb: &FiniteProblem) {
+    let mut solver = init_solver(pb);
+    if solver.propagate_and_backtrack_to_consistent() {
+        let str = format_partial_plan(pb, &solver.model).unwrap();
+        println!("{}", str);
+    } else {
+        panic!("Invalid problem");
     }
 }
 
