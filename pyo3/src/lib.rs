@@ -623,8 +623,7 @@ impl ChronicleProblem {
                 );
             }
 
-            let constr: Constraint;
-            if left_type == "__timepoint__" {
+            let constr: Constraint = if left_type == "__timepoint__" {
                 let left_var: Vec<&str> = left_value.split(" + ").collect();
                 let left_delay: i32 = left_var[1].parse().unwrap();
                 let left_value: FAtom = if left_var[0] == "__s__" || left_var[0] == ch_value_start {
@@ -645,7 +644,7 @@ impl ChronicleProblem {
                     panic!("unsupported right case: {}", right_var[0]);
                 };
 
-                constr = if relation == "==" {
+                if relation == "==" {
                     Constraint::eq(left_value + left_delay, right_value + right_delay)
                 } else if relation == "!=" {
                     Constraint::neq(left_value + left_delay, right_value + right_delay)
@@ -659,19 +658,19 @@ impl ChronicleProblem {
                     Constraint::lt(right_value + right_delay, left_value + left_delay + FAtom::EPSILON)
                 } else {
                     panic!("unknow relation {}", relation);
-                };
+                }
             } else {
                 let left_var: SAtom = *args.get(left_value).unwrap();
                 let right_var: SAtom = *args.get(right_value).unwrap();
 
-                constr = if relation == "==" {
+                if relation == "==" {
                     Constraint::eq(left_var, right_var)
                 } else if relation == "!=" {
                     Constraint::neq(left_var, right_var)
                 } else {
                     panic!("unsupported relation {} for no timepoints", relation);
-                };
-            }
+                }
+            };
 
             ch.constraints.push(constr);
         }
