@@ -413,6 +413,11 @@ impl ChronicleProblem {
         } else {
             ch_value_start
         };
+        let ch_id_end: &str = if ch_value_end.len() >= 5 {
+            &ch_value_end[..5]
+        } else {
+            ch_value_end
+        };
 
         // Start & End of chronicle
         let start = context
@@ -421,16 +426,16 @@ impl ChronicleProblem {
         params.push(start.into());
         let start = FAtom::from(start) + ch_delay_start;
 
-        let end: FAtom = if ch_value_start == ch_value_end && (ch_id_start != "__d__" || kind == ChronicleKind::Action)
-        {
-            start + FAtom::EPSILON
-        } else {
-            let end = context
-                .model
-                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
-            params.push(end.into());
-            end.into()
-        } + ch_delay_end;
+        let end: FAtom =
+            if kind == ChronicleKind::Action && (ch_value_start == ch_value_end || ch_id_start == ch_id_end) {
+                start + FAtom::EPSILON
+            } else {
+                let end = context
+                    .model
+                    .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
+                params.push(end.into());
+                end.into()
+            } + ch_delay_end;
 
         // Name & Parameters
         let mut name: Vec<SAtom> = vec![context
