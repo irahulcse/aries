@@ -437,12 +437,17 @@ impl Debug for Chronicle {
         writeln!(f, "START :{:?}", &self.start)?;
         writeln!(f, "END :{:?}", &self.end)?;
         writeln!(f, "NAME : {:?}", self.name)?;
+        if self.task.is_some() {
+            writeln!(f, "TASK : {:?}", self.task.as_ref().unwrap())?;
+        }
         writeln!(f, "\nCONDITIONS :")?;
         fmt_vec(f, &self.conditions)?;
         writeln!(f, "\nEFFECTS :")?;
         fmt_vec(f, &self.effects)?;
         writeln!(f, "\nCONSTRAINTS :")?;
         fmt_vec(f, &self.constraints)?;
+        writeln!(f, "\nSUBTASKS :")?;
+        fmt_vec(f, &self.subtasks)?;
         Ok(())
     }
 }
