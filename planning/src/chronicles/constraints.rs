@@ -20,7 +20,7 @@ impl Constraint {
     pub fn eq(a: impl Into<Atom>, b: impl Into<Atom>) -> Constraint {
         Constraint {
             variables: vec![a.into(), b.into()],
-            tpe: Neq,
+            tpe: Eq,
         }
     }
     pub fn neq(a: impl Into<Atom>, b: impl Into<Atom>) -> Constraint {
