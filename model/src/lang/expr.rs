@@ -54,13 +54,13 @@ pub fn gt(lhs: impl Into<IAtom>, rhs: impl Into<IAtom>) -> Leq {
 pub fn f_leq(lhs: impl Into<FAtom>, rhs: impl Into<FAtom>) -> Leq {
     let lhs = lhs.into();
     let rhs = rhs.into();
-    assert_eq!(lhs.denom, rhs.denom);
+    assert_eq!(lhs.denom, rhs.denom, "need to have the same denom");
     leq(lhs.num, rhs.num)
 }
 pub fn f_lt(lhs: impl Into<FAtom>, rhs: impl Into<FAtom>) -> Leq {
     let lhs = lhs.into();
     let rhs = rhs.into();
-    assert_eq!(lhs.denom, rhs.denom);
+    assert_eq!(lhs.denom, rhs.denom, "need to have the same denom");
     lt(lhs.num, rhs.num)
 }
 
