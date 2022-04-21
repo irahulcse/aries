@@ -1,7 +1,7 @@
 use crate::Strat::{Activity, Forward};
 use aries_core::{Lit, INT_CST_MAX};
 use aries_model::extensions::{SavedAssignment, Shaped};
-use aries_model::lang::{FAtom, SAtom, Type, Variable};
+use aries_model::lang::{FAtom, IAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
 use aries_planners::encode::{encode, populate_with_task_network};
@@ -767,12 +767,15 @@ fn add_task_network(
             .unwrap();
         let relation = &constraint[1];
 
+        let first_default: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
+        let second_default: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
+
         let first_atom: FAtom = *task_starts
             .get(&constraint[0])
-            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap());
+            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap_or(&first_default));
         let second_atom: FAtom = *task_starts
             .get(&constraint[2])
-            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap());
+            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap_or(&second_default));
 
         let new_constraint = if relation == "==" {
             Constraint::eq(first_atom + first_delay, second_atom + second_delay)
@@ -789,6 +792,8 @@ fn add_task_network(
         } else {
             panic!("unknow relation {}", relation);
         };
+
+        println!("constraint = {:?}", new_constraint);
 
         ch.constraints.push(new_constraint);
     }
