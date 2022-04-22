@@ -280,7 +280,7 @@ impl ChronicleProblem {
     /// - task : TempSign
     ///     - Signature of the task achieved by the template.
     /// - subtasks : list of TempSign
-    ///     - List of the requiered tasks in order to achieve the `task`.
+    ///     - List of the required tasks in order to achieve the `task`.
     /// - subtasks_constraints : list of TemporalConstraint
     ///     - List of temporal constraint between the subtasks.
     fn add_method(
@@ -365,7 +365,7 @@ impl ChronicleProblem {
     /// - task : Sign, optional
     ///     - Signature of the task achieved by the template.
     /// - subtasks : list of Sign, optional
-    ///     - List of the requiered tasks in order to achieve the `task`.
+    ///     - List of the required tasks in order to achieve the `task`.
     /// - subtasks_constraints : list of TemporalConstraint, optional
     ///     - List of temporal constraint between the subtasks.
     #[allow(clippy::too_many_arguments)] // this function has too many arguments (8/7)
@@ -662,7 +662,7 @@ impl ChronicleProblem {
                 } else if relation == ">=" {
                     Constraint::lt(right_value + right_delay, left_value + left_delay + FAtom::EPSILON)
                 } else {
-                    panic!("unknow relation {}", relation);
+                    panic!("unknown relation {}", relation);
                 }
             } else {
                 let left_var: SAtom = *args.get(left_value).unwrap();
@@ -713,7 +713,7 @@ impl ChronicleProblem {
 /// - ch : Chronicle
 ///     - Chronicle where the task network will be added.
 /// - context : Ctx
-///     - The contet of the problem.
+///     - The context of the problem.
 /// - args: HashMap<&str, SAtom>, optional
 ///     - Mapping of an argument value with its associated SAtom.
 /// - tasks : list of TempSign
@@ -790,7 +790,7 @@ fn add_task_network(
         } else if relation == ">=" {
             Constraint::lt(second_atom + second_delay, first_atom + first_delay + FAtom::EPSILON)
         } else {
-            panic!("unknow relation {}", relation);
+            panic!("unknown relation {}", relation);
         };
 
         println!("constraint = {:?}", new_constraint);
@@ -804,7 +804,7 @@ fn add_task_network(
 /// Parameters
 /// ----------
 /// - context : Ctx
-///     - The contet of the problem.
+///     - The context of the problem.
 /// - c : Container
 ///     - Container used for the subtasks creations.
 /// - pres : Lit
