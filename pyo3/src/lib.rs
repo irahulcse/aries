@@ -424,7 +424,8 @@ impl ChronicleProblem {
             .model
             .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleStart);
         params.push(start.into());
-        let start = FAtom::from(start) + ch_delay_start;
+        let start = FAtom::from(start);
+        let start = FAtom::new(start.num + ch_delay_start, start.denom);
 
         let end: FAtom =
             if kind == ChronicleKind::Action && (ch_value_start == ch_value_end || ch_id_start == ch_id_end) {
@@ -435,7 +436,8 @@ impl ChronicleProblem {
                     .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
                 params.push(end.into());
                 end.into()
-            } + ch_delay_end;
+            };
+        let end = FAtom::new(end.num + ch_delay_end, end.denom);
 
         // Name & Parameters
         let mut name: Vec<SAtom> = vec![context
@@ -527,6 +529,7 @@ impl ChronicleProblem {
             } else {
                 panic!("unsupported start case: {}", value_start);
             };
+            let start = FAtom::new(start.num + delay_start, start.denom);
 
             let end = if id_end == "__e__" || id_end == "__d__" || value_end == ch_value_end {
                 ch.end
@@ -535,10 +538,11 @@ impl ChronicleProblem {
             } else {
                 panic!("unsupported end case: {}", value_end);
             };
+            let end = FAtom::new(end.num + delay_end, end.denom);
 
             ch.effects.push(Effect {
-                transition_start: start + delay_start,
-                persistence_start: end + delay_end,
+                transition_start: start,
+                persistence_start: end,
                 state_var: sv,
                 value: value.into(),
             });
@@ -588,6 +592,7 @@ impl ChronicleProblem {
             } else {
                 panic!("unsupported start case: {}", value_start);
             };
+            let start = FAtom::new(start.num + delay_start, start.denom);
 
             let end = if id_end == "__e__" || value_end == ch_value_end {
                 ch.end
@@ -602,10 +607,11 @@ impl ChronicleProblem {
             } else {
                 panic!("unsupported end case: {}", value_end);
             };
+            let end = FAtom::new(end.num + delay_end, end.denom);
 
             ch.conditions.push(Condition {
-                start: start + delay_start,
-                end: end + delay_end,
+                start,
+                end,
                 state_var: sv,
                 value: value.into(),
             });
@@ -638,6 +644,7 @@ impl ChronicleProblem {
                 } else {
                     panic!("unsupported left case: {}", left_var[0]);
                 };
+                let left_value: FAtom = FAtom::new(left_value.num + left_delay, left_value.denom);
 
                 let right_var: Vec<&str> = right_value.split(" + ").collect();
                 let right_delay: i32 = right_var[1].parse().unwrap();
@@ -648,19 +655,20 @@ impl ChronicleProblem {
                 } else {
                     panic!("unsupported right case: {}", right_var[0]);
                 };
+                let right_value: FAtom = FAtom::new(right_value.num + right_delay, right_value.denom);
 
                 if relation == "==" {
-                    Constraint::eq(left_value + left_delay, right_value + right_delay)
+                    Constraint::eq(left_value, right_value)
                 } else if relation == "!=" {
-                    Constraint::neq(left_value + left_delay, right_value + right_delay)
+                    Constraint::neq(left_value, right_value)
                 } else if relation == "<" {
-                    Constraint::lt(left_value + left_delay, right_value + right_delay)
+                    Constraint::lt(left_value, right_value)
                 } else if relation == ">" {
-                    Constraint::lt(right_value + right_delay, left_value + left_delay)
+                    Constraint::lt(right_value, left_value)
                 } else if relation == "<=" {
-                    Constraint::lt(left_value + left_delay, right_value + right_delay + FAtom::EPSILON)
+                    Constraint::lt(left_value, right_value + FAtom::EPSILON)
                 } else if relation == ">=" {
-                    Constraint::lt(right_value + right_delay, left_value + left_delay + FAtom::EPSILON)
+                    Constraint::lt(right_value, left_value + FAtom::EPSILON)
                 } else {
                     panic!("unknown relation {}", relation);
                 }
@@ -767,28 +775,28 @@ fn add_task_network(
             .unwrap();
         let relation = &constraint[1];
 
-        let first_default: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
-        let second_default: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
-
+        let default_atom: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
         let first_atom: FAtom = *task_starts
             .get(&constraint[0])
-            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap_or(&first_default));
+            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap_or(&default_atom));
+        let first_atom: FAtom = FAtom::new(first_atom.num + first_delay, first_atom.denom);
         let second_atom: FAtom = *task_starts
             .get(&constraint[2])
-            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap_or(&second_default));
+            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap_or(&default_atom));
+        let second_atom: FAtom = FAtom::new(second_atom.num + second_delay, second_atom.denom);
 
         let new_constraint = if relation == "==" {
-            Constraint::eq(first_atom + first_delay, second_atom + second_delay)
+            Constraint::eq(first_atom, second_atom)
         } else if relation == "!=" {
-            Constraint::neq(first_atom + first_delay, second_atom + second_delay)
+            Constraint::neq(first_atom, second_atom)
         } else if relation == "<" {
-            Constraint::lt(first_atom + first_delay, second_atom + second_delay)
+            Constraint::lt(first_atom, second_atom)
         } else if relation == ">" {
-            Constraint::lt(second_atom + second_delay, first_atom + first_delay)
+            Constraint::lt(second_atom, first_atom)
         } else if relation == "<=" {
-            Constraint::lt(first_atom + first_delay, second_atom + second_delay + FAtom::EPSILON)
+            Constraint::lt(first_atom, second_atom + FAtom::EPSILON)
         } else if relation == ">=" {
-            Constraint::lt(second_atom + second_delay, first_atom + first_delay + FAtom::EPSILON)
+            Constraint::lt(second_atom, first_atom + FAtom::EPSILON)
         } else {
             panic!("unknown relation {}", relation);
         };
