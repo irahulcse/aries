@@ -309,7 +309,9 @@ impl ChronicleProblem {
     /// ----------
     /// - output_file : str
     ///     - Path to the output file where the plan will be saved.
-    fn solve(&self, output_file: &str) {
+    /// - verbose: bool
+    ///     - Whether or not information must be printed in the console.
+    fn solve(&self, output_file: &str, verbose: bool) {
         run_problem(
             &mut Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -321,6 +323,7 @@ impl ChronicleProblem {
                 }],
             },
             output_file,
+            verbose,
         );
     }
 }
@@ -801,8 +804,6 @@ fn add_task_network(
             panic!("unknown relation {}", relation);
         };
 
-        println!("constraint = {:?}", new_constraint);
-
         ch.constraints.push(new_constraint);
     }
 }
@@ -872,12 +873,20 @@ fn chronicles(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+macro_rules! printlnv {
+    ($v: expr, $($arg:tt)*) => {
+        if $v == true {
+            println!($($arg)*);
+        }
+    };
+}
+
 //region Solver
 /// This part is mainly a copy of `aries/planners/src/bin/lcp.rs`
-fn run_problem(problem: &mut Problem, output_file: &str) {
-    println!("===== Preprocessing ======");
+fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) {
+    printlnv!(verbose, "===== Preprocessing ======");
     aries_planning::chronicles::preprocessing::preprocess(problem);
-    println!("==========================");
+    printlnv!(verbose, "==========================");
 
     let max_depth = u32::MAX;
     let min_depth = if hierarchical_is_non_recursive(problem) {
@@ -892,7 +901,7 @@ fn run_problem(problem: &mut Problem, output_file: &str) {
         } else {
             n.to_string()
         };
-        println!("{} Solving with {} actions", depth_string, depth_string);
+        printlnv!(verbose, "{} Solving with {} actions", depth_string, depth_string);
         let start = Instant::now();
         let mut pb = FiniteProblem {
             model: problem.context.model.clone(),
@@ -902,13 +911,13 @@ fn run_problem(problem: &mut Problem, output_file: &str) {
             tables: problem.context.tables.clone(),
         };
         populate_with_task_network(&mut pb, problem, n).unwrap();
-        println!("  [{:.3}s] Populated", start.elapsed().as_secs_f32());
+        printlnv!(verbose, "  [{:.3}s] Populated", start.elapsed().as_secs_f32());
         let start = Instant::now();
-        let result = solve(&pb);
-        println!("  [{:.3}s] solved", start.elapsed().as_secs_f32());
+        let result = solve(&pb, verbose);
+        printlnv!(verbose, "  [{:.3}s] solved", start.elapsed().as_secs_f32());
         if let Some(x) = result {
-            propagate_and_print(&pb);
-            println!("  Solution found");
+            propagate_and_print(&pb, verbose);
+            printlnv!(verbose, "  Solution found");
             let plan = format!(
                 "\n**** Decomposition ****\n\n\
                     {}\n\n\
@@ -917,21 +926,21 @@ fn run_problem(problem: &mut Problem, output_file: &str) {
                 format_hddl_plan(&pb, &x).unwrap(),
                 format_pddl_plan(&pb, &x).unwrap()
             );
-            println!("{}", plan);
+            printlnv!(verbose, "{}", plan);
             let mut file = File::create(output_file).unwrap();
             file.write_all(plan.as_bytes()).unwrap();
             break;
         } else {
-            println!("  No solution found");
+            printlnv!(verbose, "  No solution found");
         }
     }
 }
 
-fn propagate_and_print(pb: &FiniteProblem) {
+fn propagate_and_print(pb: &FiniteProblem, verbose: bool) {
     let mut solver = init_solver(pb);
     if solver.propagate_and_backtrack_to_consistent() {
         let str = format_partial_plan(pb, &solver.model).unwrap();
-        println!("{}", str);
+        printlnv!(verbose, "{}", str);
     } else {
         panic!("Invalid problem");
     }
@@ -984,7 +993,7 @@ impl FromStr for Strat {
     }
 }
 
-fn solve(pb: &FiniteProblem) -> Option<std::sync::Arc<SavedAssignment>> {
+fn solve(pb: &FiniteProblem, verbose: bool) -> Option<std::sync::Arc<SavedAssignment>> {
     let solver = init_solver(pb);
     let strats: &[Strat] = &HTN_DEFAULT_STRATEGIES;
     let mut solver =
@@ -993,7 +1002,9 @@ fn solve(pb: &FiniteProblem) -> Option<std::sync::Arc<SavedAssignment>> {
     let found_plan = solver.solve().unwrap();
 
     if let Some(solution) = found_plan {
-        solver.print_stats();
+        if verbose {
+            solver.print_stats();
+        }
         Some(solution)
     } else {
         None
