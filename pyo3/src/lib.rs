@@ -5,7 +5,7 @@ use aries_model::lang::{FAtom, IAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
 use aries_planners::encode::{encode, populate_with_task_network, CausalLinks};
-use aries_planners::fmt::{format_chronicle, format_cond, format_hddl_plan, format_partial_plan, format_pddl_plan};
+use aries_planners::fmt::{format_causal_links, format_hddl_plan, format_partial_plan, format_pddl_plan};
 use aries_planners::forward_search::ForwardSearcher;
 use aries_planners::Solver;
 use aries_planning::chronicles::analysis::hierarchical_is_non_recursive;
@@ -919,24 +919,16 @@ fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) {
             propagate_and_print(&pb, verbose);
             printlnv!(verbose, "  Solution found");
             let plan = format!(
-                "\n**** Decomposition ****\n\n\
+                "\n**** Causal links ****\n\n\
+                    {}\n\n\
+                    **** Decomposition ****\n\n\
                     {}\n\n\
                     **** Plan ****\n\n\
                     {}",
+                format_causal_links(&pb, &x, &causal_links).unwrap(),
                 format_hddl_plan(&pb, &x).unwrap(),
                 format_pddl_plan(&pb, &x).unwrap()
             );
-            for ((c, e), lit) in causal_links.links.iter() {
-                if x.present(lit.variable()) == Some(true) && x.entails(*lit) {
-                    printlnv!(
-                        verbose,
-                        "Condition on {} of action {}\n  Support by effect of action {}",
-                        format_cond(*c, &x, &pb),
-                        format_chronicle(c.chronicle_id, &x, &pb),
-                        format_chronicle(e.chronicle_id, &x, &pb),
-                    );
-                }
-            }
             printlnv!(verbose, "{}", plan);
             let mut file = File::create(output_file).unwrap();
             file.write_all(plan.as_bytes()).unwrap();

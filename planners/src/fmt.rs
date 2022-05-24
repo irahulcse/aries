@@ -1,5 +1,6 @@
 //! Functions related to printing and formatting (partial) plans.
 
+use crate::encode::CausalLinks;
 use anyhow::*;
 use std::fmt::Write;
 
@@ -167,6 +168,26 @@ pub fn format_cond(cond: ConditionId, assignment: &SavedAssignment, problem: &Fi
         assignment,
         problem,
     )
+}
+
+pub fn format_causal_links(
+    problem: &FiniteProblem,
+    ass: &SavedAssignment,
+    causal_links: &CausalLinks,
+) -> Result<String> {
+    let mut out = String::new();
+    for ((c, e), lit) in causal_links.links.iter() {
+        if ass.present(lit.variable()) == Some(true) && ass.entails(*lit) {
+            writeln!(
+                out,
+                "Condition on {} of action {}\n  Support by effect of action {}",
+                format_cond(*c, ass, problem),
+                format_chronicle(c.chronicle_id, ass, problem),
+                format_chronicle(e.chronicle_id, ass, problem),
+            )?;
+        }
+    }
+    Ok(out)
 }
 
 pub fn format_pddl_plan(problem: &FiniteProblem, ass: &SavedAssignment) -> Result<String> {
