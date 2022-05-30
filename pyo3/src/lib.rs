@@ -311,7 +311,12 @@ impl ChronicleProblem {
     ///     - Path to the output file where the plan will be saved.
     /// - verbose: bool
     ///     - Whether or not information must be printed in the console.
-    fn solve(&self, output_file: &str, verbose: bool) {
+    ///
+    /// Returns
+    /// -------
+    /// - bool
+    ///     - Whether or not a solution has been found.
+    fn solve(&self, output_file: &str, verbose: bool) -> bool {
         run_problem(
             &mut Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -324,7 +329,7 @@ impl ChronicleProblem {
             },
             output_file,
             verbose,
-        );
+        )
     }
 }
 
@@ -883,7 +888,7 @@ macro_rules! printlnv {
 
 //region Solver
 /// This part is mainly a copy of `aries/planners/src/bin/lcp.rs`
-fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) {
+fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) -> bool {
     printlnv!(verbose, "===== Preprocessing ======");
     aries_planning::chronicles::preprocessing::preprocess(problem);
     printlnv!(verbose, "==========================");
@@ -894,6 +899,8 @@ fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) {
     } else {
         0
     };
+
+    let mut solved: bool = false;
 
     for n in min_depth..=max_depth {
         let depth_string = if n == u32::MAX {
@@ -932,11 +939,13 @@ fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) {
             printlnv!(verbose, "{}", plan);
             let mut file = File::create(output_file).unwrap();
             file.write_all(plan.as_bytes()).unwrap();
+            solved = true;
             break;
         } else {
             printlnv!(verbose, "  No solution found");
         }
     }
+    solved
 }
 
 fn propagate_and_print(pb: &FiniteProblem, verbose: bool) {
