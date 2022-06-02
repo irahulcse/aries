@@ -750,7 +750,15 @@ fn add_task_network(
 
     for mut task in tasks {
         let end = task.pop().unwrap();
+        let end_split = end.split(" - ").collect::<Vec<&str>>();
+        let end_type = end_split[1];
+        let end_value = end_split[0].split(" + ").collect::<Vec<&str>>()[0];
+        let end = format!("{} - {}", end_value, end_type);
         let start = task.pop().unwrap();
+        let start_split = start.split(" - ").collect::<Vec<&str>>();
+        let start_type = start_split[1];
+        let start_value = start_split[0].split(" + ").collect::<Vec<&str>>()[0];
+        let start = format!("{} - {}", start_value, start_type);
         let tn = if let Some(args) = args.clone() {
             let mut tn = vec![context
                 .typed_sym(context.model.get_symbol_table().id(&task[0]).unwrap())
@@ -771,26 +779,28 @@ fn add_task_network(
     }
 
     for constraint in constraints {
-        let first_delay: i32 = constraint[0].split(" - ").collect::<Vec<&str>>()[0]
-            .split(" + ")
-            .collect::<Vec<&str>>()[1]
-            .parse()
-            .unwrap();
-        let second_delay: i32 = constraint[2].split(" - ").collect::<Vec<&str>>()[0]
-            .split(" + ")
-            .collect::<Vec<&str>>()[1]
-            .parse()
-            .unwrap();
+        let first = &constraint[0];
+        let first_split = first.split(" - ").collect::<Vec<&str>>();
+        let first_type = first_split[1];
+        let first_value = first_split[0].split(" + ").collect::<Vec<&str>>()[0];
+        let first = format!("{} - {}", first_value, first_type);
+        let first_delay: i32 = first_split[0].split(" + ").collect::<Vec<&str>>()[1].parse().unwrap();
+        let second = &constraint[2];
+        let second_split = second.split(" - ").collect::<Vec<&str>>();
+        let second_type = second_split[1];
+        let second_value = second_split[0].split(" + ").collect::<Vec<&str>>()[0];
+        let second = format!("{} - {}", second_value, second_type);
+        let second_delay: i32 = second_split[0].split(" + ").collect::<Vec<&str>>()[1].parse().unwrap();
         let relation = &constraint[1];
 
         let default_atom: FAtom = FAtom::new(IAtom::ZERO, TIME_SCALE);
         let first_atom: FAtom = *task_starts
-            .get(&constraint[0])
-            .unwrap_or_else(|| task_ends.get(&constraint[0]).unwrap_or(&default_atom));
+            .get(&first)
+            .unwrap_or_else(|| task_ends.get(&first).unwrap_or(&default_atom));
         let first_atom: FAtom = FAtom::new(first_atom.num + first_delay, first_atom.denom);
         let second_atom: FAtom = *task_starts
-            .get(&constraint[2])
-            .unwrap_or_else(|| task_ends.get(&constraint[2]).unwrap_or(&default_atom));
+            .get(&second)
+            .unwrap_or_else(|| task_ends.get(&second).unwrap_or(&default_atom));
         let second_atom: FAtom = FAtom::new(second_atom.num + second_delay, second_atom.denom);
 
         let new_constraint = if relation == "==" {
