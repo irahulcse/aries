@@ -925,13 +925,13 @@ fn run_problem(problem: Problem, output_file: &str, verbose: bool) -> bool {
         0
     };
 
-    let optimize = Some(Metric::ActionCosts);
+    let optimize = Metric::ActionCosts;
     let resolved;
 
     let result = solve(problem, min_depth, max_depth, optimize, verbose);
-    if let Some((finite_problem, assignment, causal_links)) = result {
+    if let Some((finite_problem, cost, assignment, causal_links)) = result {
         resolved = true;
-        let plan_out = format_plan(&finite_problem, &assignment, &causal_links);
+        let plan_out = format_plan(&finite_problem, cost, &assignment, &causal_links);
         printlnv!(verbose, "{}", plan_out);
 
         // Write the output to a file
@@ -945,17 +945,20 @@ fn run_problem(problem: Problem, output_file: &str, verbose: bool) -> bool {
     resolved
 }
 
-fn format_plan(problem: &FiniteProblem, plan: &Arc<Domains>, causal_links: &CausalLinks) -> String {
+fn format_plan(problem: &FiniteProblem, cost: i32, plan: &Arc<Domains>, causal_links: &CausalLinks) -> String {
     format!(
         "\n**** Causal links ****\n\n\
             {}\n\n\
             **** Decomposition ****\n\n\
             {}\n\n\
             **** Plan ****\n\n\
+            {}\n\n\
+            **** Cost ****\n\n\
             {}",
         format_causal_links(problem, plan, causal_links).unwrap(),
         format_hddl_plan(problem, plan).unwrap(),
-        format_pddl_plan(problem, plan).unwrap()
+        format_pddl_plan(problem, plan).unwrap(),
+        cost,
     )
 }
 
@@ -963,9 +966,9 @@ fn solve(
     mut base_problem: Problem,
     min_depth: u32,
     max_depth: u32,
-    metric: Option<Metric>,
+    metric: Metric,
     verbose: bool,
-) -> Option<(FiniteProblem, Arc<Domains>, CausalLinks)> {
+) -> Option<(FiniteProblem, i32, Arc<Domains>, CausalLinks)> {
     printlnv!(verbose, "===== Preprocessing ======");
     aries_planning::chronicles::preprocessing::preprocess(&mut base_problem);
     printlnv!(verbose, "==========================");
@@ -990,9 +993,9 @@ fn solve(
         let result = solve_finite_problem(&pb, metric, verbose);
         printlnv!(verbose, "  [{:.3}s] Solved", start.elapsed().as_secs_f32());
 
-        if let Some((solution, causal_links)) = result {
+        if let Some((cost, solution, causal_links)) = result {
             // we got a valid assignment, return the corresponding plan
-            return Some((pb, solution, causal_links));
+            return Some((pb, cost, solution, causal_links));
         }
     }
     None
@@ -1000,8 +1003,8 @@ fn solve(
 
 const HTN_DEFAULT_STRATEGIES: [Strat; 2] = [Strat::Activity, Strat::Forward];
 
-pub fn init_solver(pb: &FiniteProblem, metric: Option<Metric>) -> (Box<Solver>, Option<IAtom>, CausalLinks) {
-    let (model, metric, causal_links) = encode(pb, metric).expect("Failed to encode the problem"); // TODO: report error
+pub fn init_solver(pb: &FiniteProblem, metric: Metric) -> (Box<Solver>, Option<IAtom>, CausalLinks) {
+    let (model, metric, causal_links) = encode(pb, Some(metric)).expect("Failed to encode the problem"); // TODO: report error
     let stn_config = StnConfig {
         theory_propagation: TheoryPropagationLevel::Full,
         ..Default::default()
@@ -1015,9 +1018,9 @@ pub fn init_solver(pb: &FiniteProblem, metric: Option<Metric>) -> (Box<Solver>, 
 
 fn solve_finite_problem(
     pb: &FiniteProblem,
-    metric: Option<Metric>,
+    metric: Metric,
     verbose: bool,
-) -> Option<(std::sync::Arc<SavedAssignment>, CausalLinks)> {
+) -> Option<(i32, std::sync::Arc<SavedAssignment>, CausalLinks)> {
     let (solver, metric, causal_links) = init_solver(pb, metric);
 
     // select the set of strategies, based on user-input or hard-coded defaults.
@@ -1025,18 +1028,13 @@ fn solve_finite_problem(
     let mut solver =
         aries_solver::parallel_solver::ParSolver::new(solver, strats.len(), |id, s| strats[id].adapt_solver(s, pb));
 
-    let found_plan = if let Some(metric) = metric {
-        let res = solver.minimize(metric).unwrap();
-        res.map(|tup| tup.1)
-    } else {
-        solver.solve().unwrap()
-    };
+    let solution = solver.minimize(metric.unwrap()).unwrap();
 
-    if let Some(solution) = found_plan {
+    if let Some((cost, plan)) = solution {
         if verbose {
             solver.print_stats();
         }
-        Some((solution, causal_links))
+        Some((cost, plan, causal_links))
     } else {
         None
     }
