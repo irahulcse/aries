@@ -2,8 +2,7 @@
 //! into a combinatorial problem from Aries core.
 
 use crate::encoding::{
-    conditions, effects, refinements_of, refinements_of_task, ConditionId, EffectId, TaskRef, TaskRef, HORIZON,
-    HORIZON, ORIGIN, ORIGIN,
+    conditions, effects, refinements_of, refinements_of_task, ConditionId, EffectId, TaskRef, HORIZON, ORIGIN,
 };
 use crate::solver::Metric;
 use crate::Model;
@@ -386,7 +385,7 @@ impl CausalLinks {
 
 /// Encodes a finite problem.
 /// If a metric is given, it will return along with the model and `IAtom` that should be minimized
-pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Model, Option<IAtom>)> {
+pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Model, Option<IAtom>, CausalLinks)> {
     let mut model = pb.model.clone();
     let symmetry_breaking_tpe = SYMMETRY_BREAKING.get();
 

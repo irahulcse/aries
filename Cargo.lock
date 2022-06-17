@@ -325,11 +325,12 @@ name = "chronicles"
 version = "0.1.0"
 dependencies = [
  "aries_core",
+ "aries_cp",
  "aries_model",
  "aries_planners",
  "aries_planning",
  "aries_solver",
- "aries_tnet",
+ "aries_stn",
  "aries_utils",
  "pyo3",
 ]

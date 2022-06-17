@@ -15,6 +15,7 @@ aries_model = { path = "../model" }
 aries_planners = { path = "../planners" }
 aries_planning = { path = "../planning" }
 aries_solver = { path = "../solver" }
-aries_tnet = { path = "../tnet" }
+aries_stn = { path = "../reasoners/stn" }
+aries_cp = { path = "../reasoners/cp" }
 aries_utils = { path = "../utils" }
 pyo3 = { version = "0.16.0", features = ["extension-module"] }

@@ -1,26 +1,30 @@
-use crate::Strat::{Activity, Forward};
+use aries_core::state::Domains;
 use aries_core::{Lit, INT_CST_MAX};
-use aries_model::extensions::{SavedAssignment, Shaped};
+use aries_cp::Cp;
+use aries_model::extensions::SavedAssignment;
+use aries_model::extensions::Shaped;
 use aries_model::lang::{FAtom, IAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
 use aries_planners::encode::{encode, populate_with_task_network, CausalLinks};
 use aries_planners::fmt::{format_causal_links, format_hddl_plan, format_partial_plan, format_pddl_plan};
-use aries_planners::forward_search::ForwardSearcher;
+use aries_planners::solver::Metric;
+use aries_planners::solver::Strat;
 use aries_planners::Solver;
 use aries_planning::chronicles::analysis::hierarchical_is_non_recursive;
 use aries_planning::chronicles::constraints::Constraint;
+use aries_planning::chronicles::FiniteProblem;
 use aries_planning::chronicles::{
     Chronicle, ChronicleInstance, ChronicleKind, ChronicleOrigin, ChronicleTemplate, Condition, Container, Ctx, Effect,
-    FiniteProblem, Problem, StateFun, SubTask, VarType, TIME_SCALE,
+    Problem, StateFun, SubTask, VarType, TIME_SCALE,
 };
-use aries_tnet::theory::{StnConfig, StnTheory, TheoryPropagationLevel};
+use aries_stn::theory::StnTheory;
+use aries_stn::theory::{StnConfig, TheoryPropagationLevel};
 use aries_utils::input::Sym;
 use pyo3::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -176,6 +180,7 @@ impl ChronicleProblem {
             effects: vec![],
             constraints: vec![],
             subtasks: vec![],
+            cost: None,
         });
     }
 
@@ -263,8 +268,17 @@ impl ChronicleProblem {
     ///     - List of preconditions of the action.
     /// - effects : list of Eff
     ///     - List of effects of the action.
-    fn add_action(&mut self, action: TempSign, constraints: Vec<Constr>, conditions: Vec<Cond>, effects: Vec<Eff>) {
-        self.add_template(action, constraints, conditions, effects, None, None, None);
+    /// - cost : integer
+    ///     - Cost of the action, the solver minimize the total cost.
+    fn add_action(
+        &mut self,
+        action: TempSign,
+        constraints: Vec<Constr>,
+        conditions: Vec<Cond>,
+        effects: Vec<Eff>,
+        cost: i32,
+    ) {
+        self.add_template(action, constraints, conditions, effects, None, None, None, Some(cost));
     }
 
     /// Allows the user to add a method.
@@ -300,6 +314,7 @@ impl ChronicleProblem {
             Some(task),
             Some(subtasks),
             Some(subtasks_constraints),
+            None,
         )
     }
 
@@ -318,7 +333,7 @@ impl ChronicleProblem {
     ///     - Whether or not a solution has been found.
     fn solve(&self, output_file: &str, verbose: bool) -> bool {
         run_problem(
-            &mut Problem {
+            Problem {
                 context: self.context.as_ref().unwrap().clone(),
                 templates: self.templates.to_vec(),
                 chronicles: vec![ChronicleInstance {
@@ -376,6 +391,8 @@ impl ChronicleProblem {
     ///     - List of the required tasks in order to achieve the `task`.
     /// - subtasks_constraints : list of TemporalConstraint, optional
     ///     - List of temporal constraint between the subtasks.
+    /// - cost : integer, optional
+    ///     - Cost of the chronicle, the solver minimize the total cost.
     #[allow(clippy::too_many_arguments)] // this function has too many arguments (8/7)
     fn add_template(
         &mut self,
@@ -386,6 +403,7 @@ impl ChronicleProblem {
         task: Option<Sign>,
         subtasks: Option<Vec<TempSign>>,
         subtasks_constraints: Option<Vec<TemporalConstraint>>,
+        cost: Option<i32>,
     ) {
         let context = self.context.as_mut().unwrap();
         let kind = if task.is_none() {
@@ -497,6 +515,7 @@ impl ChronicleProblem {
             effects: vec![],
             constraints: vec![],
             subtasks: vec![],
+            cost: cost,
         };
 
         // Effect
@@ -898,78 +917,91 @@ macro_rules! printlnv {
 
 //region Solver
 /// This part is mainly a copy of `aries/planners/src/bin/lcp.rs`
-fn run_problem(problem: &mut Problem, output_file: &str, verbose: bool) -> bool {
-    printlnv!(verbose, "===== Preprocessing ======");
-    aries_planning::chronicles::preprocessing::preprocess(problem);
-    printlnv!(verbose, "==========================");
-
+fn run_problem(problem: Problem, output_file: &str, verbose: bool) -> bool {
     let max_depth = u32::MAX;
-    let min_depth = if hierarchical_is_non_recursive(problem) {
-        max_depth // non recursive htn: bounded size, go directly to max
+    let min_depth = if hierarchical_is_non_recursive(&problem) {
+        max_depth
     } else {
         0
     };
 
-    let mut solved: bool = false;
+    let optimize = Some(Metric::ActionCosts);
+    let resolved;
 
-    for n in min_depth..=max_depth {
-        let depth_string = if n == u32::MAX {
+    let result = solve(problem, min_depth, max_depth, optimize, verbose);
+    if let Some((finite_problem, assignment, causal_links)) = result {
+        resolved = true;
+        let plan_out = format_plan(&finite_problem, &assignment, &causal_links);
+        printlnv!(verbose, "{}", plan_out);
+
+        // Write the output to a file
+        let mut file = File::create(output_file).unwrap();
+        file.write_all(plan_out.as_bytes()).unwrap();
+    } else {
+        resolved = false;
+        printlnv!(verbose, "\nNo plan found");
+    }
+
+    resolved
+}
+
+fn format_plan(problem: &FiniteProblem, plan: &Arc<Domains>, causal_links: &CausalLinks) -> String {
+    format!(
+        "\n**** Causal links ****\n\n\
+            {}\n\n\
+            **** Decomposition ****\n\n\
+            {}\n\n\
+            **** Plan ****\n\n\
+            {}",
+        format_causal_links(problem, plan, causal_links).unwrap(),
+        format_hddl_plan(problem, plan).unwrap(),
+        format_pddl_plan(problem, plan).unwrap()
+    )
+}
+
+fn solve(
+    mut base_problem: Problem,
+    min_depth: u32,
+    max_depth: u32,
+    metric: Option<Metric>,
+    verbose: bool,
+) -> Option<(FiniteProblem, Arc<Domains>, CausalLinks)> {
+    printlnv!(verbose, "===== Preprocessing ======");
+    aries_planning::chronicles::preprocessing::preprocess(&mut base_problem);
+    printlnv!(verbose, "==========================");
+
+    let start = Instant::now();
+    for depth in min_depth..=max_depth {
+        let mut pb = FiniteProblem {
+            model: base_problem.context.model.clone(),
+            origin: base_problem.context.origin(),
+            horizon: base_problem.context.horizon(),
+            chronicles: base_problem.chronicles.clone(),
+            tables: base_problem.context.tables.clone(),
+        };
+        let depth_string = if depth == u32::MAX {
             "∞".to_string()
         } else {
-            n.to_string()
+            depth.to_string()
         };
         printlnv!(verbose, "{} Solving with {} actions", depth_string, depth_string);
-        let start = Instant::now();
-        let mut pb = FiniteProblem {
-            model: problem.context.model.clone(),
-            origin: problem.context.origin(),
-            horizon: problem.context.horizon(),
-            chronicles: problem.chronicles.clone(),
-            tables: problem.context.tables.clone(),
-        };
-        populate_with_task_network(&mut pb, problem, n).unwrap();
+        populate_with_task_network(&mut pb, &base_problem, depth).unwrap();
         printlnv!(verbose, "  [{:.3}s] Populated", start.elapsed().as_secs_f32());
-        let start = Instant::now();
-        let result = solve(&pb, verbose);
-        printlnv!(verbose, "  [{:.3}s] solved", start.elapsed().as_secs_f32());
-        if let Some((x, causal_links)) = result {
-            propagate_and_print(&pb, verbose);
-            printlnv!(verbose, "  Solution found");
-            let plan = format!(
-                "\n**** Causal links ****\n\n\
-                    {}\n\n\
-                    **** Decomposition ****\n\n\
-                    {}\n\n\
-                    **** Plan ****\n\n\
-                    {}",
-                format_causal_links(&pb, &x, &causal_links).unwrap(),
-                format_hddl_plan(&pb, &x).unwrap(),
-                format_pddl_plan(&pb, &x).unwrap()
-            );
-            printlnv!(verbose, "{}", plan);
-            let mut file = File::create(output_file).unwrap();
-            file.write_all(plan.as_bytes()).unwrap();
-            solved = true;
-            break;
-        } else {
-            printlnv!(verbose, "  No solution found");
+        let result = solve_finite_problem(&pb, metric, verbose);
+        printlnv!(verbose, "  [{:.3}s] Solved", start.elapsed().as_secs_f32());
+
+        if let Some((solution, causal_links)) = result {
+            // we got a valid assignment, return the corresponding plan
+            return Some((pb, solution, causal_links));
         }
     }
-    solved
+    None
 }
 
-fn propagate_and_print(pb: &FiniteProblem, verbose: bool) {
-    let (mut solver, _) = init_solver(pb);
-    if solver.propagate_and_backtrack_to_consistent() {
-        let str = format_partial_plan(pb, &solver.model).unwrap();
-        printlnv!(verbose, "{}", str);
-    } else {
-        panic!("Invalid problem");
-    }
-}
+const HTN_DEFAULT_STRATEGIES: [Strat; 2] = [Strat::Activity, Strat::Forward];
 
-fn init_solver(pb: &FiniteProblem) -> (Box<Solver>, CausalLinks) {
-    let (model, causal_links) = encode(pb).unwrap();
+pub fn init_solver(pb: &FiniteProblem, metric: Option<Metric>) -> (Box<Solver>, Option<IAtom>, CausalLinks) {
+    let (model, metric, causal_links) = encode(pb, metric).expect("Failed to encode the problem"); // TODO: report error
     let stn_config = StnConfig {
         theory_propagation: TheoryPropagationLevel::Full,
         ..Default::default()
@@ -977,51 +1009,28 @@ fn init_solver(pb: &FiniteProblem) -> (Box<Solver>, CausalLinks) {
 
     let mut solver = Box::new(aries_solver::solver::Solver::new(model));
     solver.add_theory(|tok| StnTheory::new(tok, stn_config));
-    (solver, causal_links)
+    solver.add_theory(Cp::new);
+    (solver, metric, causal_links)
 }
 
-/// Default set of strategies for HTN problems
-const HTN_DEFAULT_STRATEGIES: [Strat; 2] = [Strat::Activity, Strat::Forward];
+fn solve_finite_problem(
+    pb: &FiniteProblem,
+    metric: Option<Metric>,
+    verbose: bool,
+) -> Option<(std::sync::Arc<SavedAssignment>, CausalLinks)> {
+    let (solver, metric, causal_links) = init_solver(pb, metric);
 
-#[derive(Copy, Clone, Debug)]
-enum Strat {
-    /// Activity based search
-    Activity,
-    /// Mimics forward search in HTN problems.
-    Forward,
-}
-
-impl Strat {
-    /// Configure the given solver to follow the strategy.
-    pub fn adapt_solver(self, solver: &mut Solver, problem: &FiniteProblem) {
-        match self {
-            Activity => {
-                // nothing, activity based search is the default configuration
-            }
-            Forward => solver.set_brancher(ForwardSearcher::new(Arc::new(problem.clone()))),
-        }
-    }
-}
-
-impl FromStr for Strat {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "1" | "act" | "activity" => Ok(Activity),
-            "2" | "fwd" | "forward" => Ok(Forward),
-            _ => Err(format!("Unknown search strategy: {}", s)),
-        }
-    }
-}
-
-fn solve(pb: &FiniteProblem, verbose: bool) -> Option<(std::sync::Arc<SavedAssignment>, CausalLinks)> {
-    let (solver, causal_links) = init_solver(pb);
+    // select the set of strategies, based on user-input or hard-coded defaults.
     let strats: &[Strat] = &HTN_DEFAULT_STRATEGIES;
     let mut solver =
         aries_solver::parallel_solver::ParSolver::new(solver, strats.len(), |id, s| strats[id].adapt_solver(s, pb));
 
-    let found_plan = solver.solve().unwrap();
+    let found_plan = if let Some(metric) = metric {
+        let res = solver.minimize(metric).unwrap();
+        res.map(|tup| tup.1)
+    } else {
+        solver.solve().unwrap()
+    };
 
     if let Some(solution) = found_plan {
         if verbose {
