@@ -668,6 +668,8 @@ impl ChronicleProblem {
                     ch.start
                 } else if left_var[0] == "__e__" || left_var[0] == ch_value_end {
                     ch.end
+                } else if left_var[0] == "0" {
+                    FAtom::new(IAtom::ZERO, TIME_SCALE)
                 } else {
                     panic!("unsupported left case: {}", left_var[0]);
                 };
@@ -679,6 +681,8 @@ impl ChronicleProblem {
                     ch.start
                 } else if right_var[0] == "__e__" || right_var[0] == ch_value_end {
                     ch.end
+                } else if right_var[0] == "0" {
+                    FAtom::new(IAtom::ZERO, TIME_SCALE)
                 } else {
                     panic!("unsupported right case: {}", right_var[0]);
                 };
