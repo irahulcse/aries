@@ -7,7 +7,7 @@ use aries_model::lang::{FAtom, IAtom, SAtom, Type, Variable};
 use aries_model::symbols::SymbolTable;
 use aries_model::types::TypeHierarchy;
 use aries_planners::encode::{encode, populate_with_task_network, CausalLinks};
-use aries_planners::fmt::{format_causal_links, format_hddl_plan, format_partial_plan, format_pddl_plan};
+use aries_planners::fmt::{format_causal_links, format_hddl_plan, format_pddl_plan};
 use aries_planners::solver::Metric;
 use aries_planners::solver::Strat;
 use aries_planners::Solver;
@@ -515,7 +515,7 @@ impl ChronicleProblem {
             effects: vec![],
             constraints: vec![],
             subtasks: vec![],
-            cost: cost,
+            cost,
         };
 
         // Effect
