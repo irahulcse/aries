@@ -334,6 +334,16 @@ impl ChronicleProblem {
         )
     }
 
+    /// Print data of the current problem for debug purpose.
+    fn debug_fmt(&self) {
+        for template in self.templates.to_vec() {
+            println!("==> {:?}", template.label.unwrap());
+            println!("{:#?}", template.chronicle);
+        }
+        println!("==> Chronicle Problem");
+        println!("{:#?}", self.init_ch.as_ref().unwrap().clone());
+    }
+
     /// Final method to call. Solve the problem defined by this instance.
     ///
     /// Parameters
@@ -348,6 +358,9 @@ impl ChronicleProblem {
     /// - bool
     ///     - Whether or not a solution has been found.
     fn solve(&self, output_file: &str, verbose: bool) -> bool {
+        if verbose {
+            self.debug_fmt();
+        }
         run_problem(
             Problem {
                 context: self.context.as_ref().unwrap().clone(),
@@ -450,17 +463,6 @@ impl ChronicleProblem {
         let ch_value_start: &str = ch_sign_start[0];
         let ch_delay_start: i32 = ch_sign_start[1].parse().unwrap();
 
-        let ch_id_start: &str = if ch_value_start.len() >= 5 {
-            &ch_value_start[..5]
-        } else {
-            ch_value_start
-        };
-        let ch_id_end: &str = if ch_value_end.len() >= 5 {
-            &ch_value_end[..5]
-        } else {
-            ch_value_end
-        };
-
         // Start & End of chronicle
         let start = context
             .model
@@ -470,16 +472,15 @@ impl ChronicleProblem {
         let start = FAtom::new(start.num + ch_delay_start, start.denom);
         self.timepoints.insert(ch_value_start.to_string(), start);
 
-        let end: FAtom =
-            if kind == ChronicleKind::Action && (ch_value_start == ch_value_end || ch_id_start == ch_id_end) {
-                start + FAtom::EPSILON
-            } else {
-                let end = context
-                    .model
-                    .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
-                params.push(end.into());
-                end.into()
-            };
+        let end: FAtom = if kind == ChronicleKind::Action && (ch_value_start == ch_value_end) {
+            start + FAtom::EPSILON
+        } else {
+            let end = context
+                .model
+                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
+            params.push(end.into());
+            end.into()
+        };
         let end = FAtom::new(end.num + ch_delay_end, end.denom);
         self.timepoints.insert(ch_value_end.to_string(), end);
 
