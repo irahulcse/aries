@@ -11,12 +11,15 @@ use aries_core::*;
 use aries_model::extensions::{AssignmentExt, Shaped};
 use aries_model::lang::expr::*;
 use aries_model::lang::linear::{LinearSum, LinearTerm};
+use aries_model::lang::Kind;
 use aries_model::lang::{FAtom, IAtom, Variable};
+use aries_planning::chronicles::constraints::Constraint;
 use aries_planning::chronicles::constraints::ConstraintType;
 use aries_planning::chronicles::*;
 use env_param::EnvParam;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::ops::Deref;
 
 /// Parameter that defines the symmetry breaking strategy to use.
 /// The value of this parameter is loaded from the environment variable `ARIES_LCP_SYMMETRY_BREAKING`.
@@ -372,6 +375,91 @@ pub fn add_metric(pb: &FiniteProblem, model: &mut Model, metric: Metric) -> IAto
     }
 }
 
+fn reify_constraint(
+    model: &mut Model,
+    pb: &FiniteProblem,
+    instance: &ChronicleInstance,
+    constraint: &Constraint,
+) -> anyhow::Result<Lit> {
+    match constraint.tpe {
+        ConstraintType::InTable { table_id } => {
+            let mut supported_by_a_line: Vec<Lit> = Vec::with_capacity(256);
+            supported_by_a_line.push(!instance.chronicle.presence);
+            let vars = &constraint.variables;
+            for values in pb.tables[table_id as usize].lines() {
+                assert_eq!(vars.len(), values.len());
+                let mut supported_by_this_line = Vec::with_capacity(16);
+                for (&var, &val) in vars.iter().zip(values.iter()) {
+                    let var = var.int_view().unwrap();
+                    supported_by_this_line.push(model.reify(leq(var, val)));
+                    supported_by_this_line.push(model.reify(geq(var, val)));
+                }
+                supported_by_a_line.push(model.reify(and(supported_by_this_line)));
+            }
+            Ok(model.reify(or(supported_by_a_line)))
+        }
+        ConstraintType::Lt => match constraint.variables.as_slice() {
+            &[a, b] => {
+                let a: FAtom = a.try_into()?;
+                let b: FAtom = b.try_into()?;
+                Ok(model.reify(f_lt(a, b)))
+            }
+            x => anyhow::bail!("Invalid variable pattern for LT constraint: {:?}", x),
+        },
+        ConstraintType::Eq => {
+            if constraint.variables.len() != 2 {
+                anyhow::bail!(
+                    "Wrong number of parameters to equality constraint: {}",
+                    constraint.variables.len()
+                );
+            }
+            let a = constraint.variables[0];
+            let b = constraint.variables[0];
+            if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
+                //println!("{:?}, eq between bool", constraint);
+                let a: Lit = a.try_into().unwrap();
+                let b: Lit = b.try_into().unwrap();
+                let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
+                Ok(model.reify(and(vec)))
+            } else {
+                Ok(model.reify(eq(constraint.variables[0], constraint.variables[1])))
+            }
+        }
+        ConstraintType::Neq => {
+            if constraint.variables.len() != 2 {
+                anyhow::bail!(
+                    "Wrong number of parameters to inequality constraint: {}",
+                    constraint.variables.len()
+                );
+            }
+            Ok(model.reify(neq(constraint.variables[0], constraint.variables[1])))
+        }
+        ConstraintType::Duration(duration) => {
+            Ok(model.reify(eq(instance.chronicle.end, instance.chronicle.start + duration)))
+        }
+        ConstraintType::Leq => match constraint.variables.as_slice() {
+            &[a, b] => {
+                let a: FAtom = a.try_into()?;
+                let b: FAtom = b.try_into()?;
+                Ok(model.reify(f_leq(a, b)))
+            }
+            x => anyhow::bail!("Invalid variable pattern for LT constraint: {:?}", x),
+        },
+        ConstraintType::Reify(ref c) => {
+            if constraint.variables.len() != 1 {
+                anyhow::bail!(
+                    "Wrong number of parameters to reify constraint : {}",
+                    constraint.variables.len()
+                );
+            }
+            let x: Lit = constraint.variables[0].try_into()?;
+            let lit = reify_constraint(model, pb, instance, c.deref())?;
+            let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
+            Ok(model.reify(and(vec)))
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CausalLinks {
     pub links: HashMap<(ConditionId, EffectId), Lit>,
@@ -555,7 +643,18 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                             constraint.variables.len()
                         );
                     }
-                    model.enforce(eq(constraint.variables[0], constraint.variables[1]));
+                    let a = constraint.variables[0];
+                    let b = constraint.variables[0];
+                    if let (Kind::Bool, Kind::Bool) = (a.kind(), b.kind()) {
+                        let a: Lit = a.try_into().unwrap();
+                        let b: Lit = b.try_into().unwrap();
+                        /*let vec = vec![model.reify(or(vec![!a, b])), model.reify(or(vec![!b, a]))];
+                        model.enforce(and(vec));*/
+                        model.enforce(implies(!a, b));
+                        model.enforce(implies(!b, a));
+                    } else {
+                        model.enforce(eq(constraint.variables[0], constraint.variables[1]));
+                    }
                 }
                 ConstraintType::Neq => {
                     if constraint.variables.len() != 2 {
@@ -568,6 +667,29 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                 }
                 ConstraintType::Duration(duration) => {
                     model.enforce(eq(instance.chronicle.end, instance.chronicle.start + duration));
+                }
+                ConstraintType::Leq => match constraint.variables.as_slice() {
+                    &[a, b] => {
+                        let a: FAtom = a.try_into()?;
+                        let b: FAtom = b.try_into()?;
+                        model.enforce(f_leq(a, b));
+                    }
+                    x => anyhow::bail!("Invalid variable pattern for LT constraint: {:?}", x),
+                },
+                ConstraintType::Reify(ref c) => {
+                    if constraint.variables.len() != 1 {
+                        anyhow::bail!(
+                            "Wrong number of parameters to reify constraint : {}",
+                            constraint.variables.len()
+                        );
+                    }
+                    let x: Lit = constraint.variables[0].try_into()?;
+
+                    let lit = reify_constraint(&mut model, pb, instance, c.deref())?;
+                    //let vec = vec![model.reify(or(vec![!x, lit])), model.reify(or(vec![!lit, x]))];
+                    //model.enforce(and(vec));
+                    model.enforce(implies(!x, lit));
+                    model.enforce(implies(!lit, x));
                 }
             }
         }
