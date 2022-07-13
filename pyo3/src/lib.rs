@@ -869,6 +869,12 @@ fn add_task_network(
         task_starts.insert(start, st.start);
         timepoints.insert(start_value.to_string(), st.start);
         timepoints.insert(end_value.to_string(), st.end);
+
+        // Force the task to be in its parent
+        ch.constraints.push(Constraint::lt(ch.start, st.start + FAtom::EPSILON)); // <=
+        ch.constraints.push(Constraint::lt(st.end, ch.end + FAtom::EPSILON)); // <=
+
+        // Set the subtask
         ch.subtasks.push(st);
     }
 
