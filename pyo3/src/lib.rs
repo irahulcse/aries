@@ -217,9 +217,11 @@ impl ChronicleProblem {
         let sign_end: String = effect.pop().unwrap();
         let sign_end: Vec<&str> = sign_end.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
         let value_end: &str = sign_end[0];
+        let delay_end: i32 = sign_end[1].parse().unwrap();
         let sign_start: String = effect.pop().unwrap();
         let sign_start: Vec<&str> = sign_start.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
         let value_start: &str = sign_start[0];
+        let delay_start: i32 = sign_start[1].parse().unwrap();
         let value: bool = effect.pop().unwrap().to_lowercase().parse().unwrap();
         let sv = satom_from_signature(self.context.as_mut().unwrap(), effect);
         let ch = self.init_ch.as_mut().unwrap();
@@ -243,6 +245,7 @@ impl ChronicleProblem {
             self.timepoints.insert(value_start.to_string(), start);
             start
         };
+        let start = FAtom::new(start.num + delay_start, start.denom);
 
         let end: FAtom = if let Some(end) = self.timepoints.get(value_end) {
             *end
@@ -263,6 +266,7 @@ impl ChronicleProblem {
             self.timepoints.insert(value_end.to_string(), end);
             end
         };
+        let end = FAtom::new(end.num + delay_end, end.denom);
 
         ch.effects.push(Effect {
             transition_start: start,
@@ -464,25 +468,33 @@ impl ChronicleProblem {
         let ch_delay_start: i32 = ch_sign_start[1].parse().unwrap();
 
         // Start & End of chronicle
-        let start = context
-            .model
-            .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleStart);
-        params.push(start.into());
-        let start = FAtom::from(start);
-        let start = FAtom::new(start.num + ch_delay_start, start.denom);
-        self.timepoints.insert(ch_value_start.to_string(), start);
-
-        let end: FAtom = if kind == ChronicleKind::Action && (ch_value_start == ch_value_end) {
-            start + FAtom::EPSILON
+        let start = if let Some(start) = self.timepoints.get(ch_value_start) {
+            FAtom::new(start.num + ch_delay_start, start.denom)
         } else {
-            let end = context
+            let start = context
                 .model
-                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
-            params.push(end.into());
-            end.into()
+                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleStart);
+            params.push(start.into());
+            let start = FAtom::from(start);
+            self.timepoints.insert(ch_value_start.to_string(), start);
+            start
         };
-        let end = FAtom::new(end.num + ch_delay_end, end.denom);
-        self.timepoints.insert(ch_value_end.to_string(), end);
+
+        let end: FAtom = if let Some(end) = self.timepoints.get(ch_value_end) {
+            FAtom::new(end.num + ch_delay_end, end.denom)
+        } else {
+            let end = if kind == ChronicleKind::Action && (ch_value_start == ch_value_end) {
+                start + FAtom::EPSILON
+            } else {
+                let end = context
+                    .model
+                    .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::ChronicleEnd);
+                params.push(end.into());
+                end.into()
+            };
+            self.timepoints.insert(ch_value_end.to_string(), end);
+            end
+        };
 
         // Name & Parameters
         let mut name: Vec<SAtom> = vec![context
@@ -871,8 +883,8 @@ fn add_task_network(
         timepoints.insert(end_value.to_string(), st.end);
 
         // Force the task to be in its parent
-        ch.constraints.push(Constraint::lt(ch.start, st.start + FAtom::EPSILON)); // <=
-        ch.constraints.push(Constraint::lt(st.end, ch.end + FAtom::EPSILON)); // <=
+        // ch.constraints.push(Constraint::lt(ch.start, st.start + FAtom::EPSILON)); // <=
+        // ch.constraints.push(Constraint::lt(st.end, ch.end + FAtom::EPSILON)); // <=
 
         // Set the subtask
         ch.subtasks.push(st);
