@@ -876,11 +876,19 @@ fn add_task_network(
             satom_from_signature(context, task)
         };
         let prez = ch.presence;
-        let st = create_subtask(context, c, prez, params, tn);
+        let mut st = create_subtask(context, c, prez, params, tn);
+        if let Some(start) = timepoints.get(start_value) {
+            st.start = *start;
+        } else {
+            timepoints.insert(start_value.to_string(), st.start);
+        }
+        if let Some(end) = timepoints.get(end_value) {
+            st.end = *end;
+        } else {
+            timepoints.insert(end_value.to_string(), st.end);
+        }
         task_ends.insert(end, st.end);
         task_starts.insert(start, st.start);
-        timepoints.insert(start_value.to_string(), st.start);
-        timepoints.insert(end_value.to_string(), st.end);
 
         // Force the task to be in its parent
         // ch.constraints.push(Constraint::lt(ch.start, st.start + FAtom::EPSILON)); // <=
