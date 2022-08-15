@@ -876,17 +876,7 @@ fn add_task_network(
             satom_from_signature(context, task)
         };
         let prez = ch.presence;
-        let mut st = create_subtask(context, c, prez, params, tn);
-        if let Some(start) = timepoints.get(start_value) {
-            st.start = *start;
-        } else {
-            timepoints.insert(start_value.to_string(), st.start);
-        }
-        if let Some(end) = timepoints.get(end_value) {
-            st.end = *end;
-        } else {
-            timepoints.insert(end_value.to_string(), st.end);
-        }
+        let st = create_subtask(context, c, prez, params, tn, timepoints, start_value, end_value);
         task_ends.insert(end, st.end);
         task_starts.insert(start, st.start);
 
@@ -964,22 +954,34 @@ fn create_subtask(
     prez: Lit,
     params: &mut Vec<Variable>,
     task_name: Vec<SAtom>,
+    timepoints: &mut HashMap<String, FAtom>,
+    start_value: &str,
+    end_value: &str,
 ) -> SubTask {
-    let start = context
-        .model
-        .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskStart);
-    let end = context
-        .model
-        .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskEnd);
-    if !params.is_empty() {
-        params.push(start.into());
-        params.push(end.into());
-    }
-    let start = FAtom::from(start);
-    let end = FAtom::from(end);
-    let id = None;
+    let start = if let Some(start) = timepoints.get(start_value) {
+        *start
+    } else {
+        let start = context
+            .model
+            .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskStart);
+        if !params.is_empty() {
+            params.push(start.into());
+        }
+        start.into()
+    };
+    let end = if let Some(end) = timepoints.get(end_value) {
+        *end
+    } else {
+        let end = context
+            .model
+            .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskEnd);
+        if !params.is_empty() {
+            params.push(end.into());
+        }
+        end.into()
+    };
     SubTask {
-        id,
+        id: None,
         start,
         end,
         task_name,
