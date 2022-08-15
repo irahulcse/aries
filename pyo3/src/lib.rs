@@ -853,6 +853,12 @@ fn add_task_network(
     let mut task_ends: HashMap<String, FAtom> = HashMap::new();
 
     for mut task in tasks {
+        // TODO Antoine: Uncomment
+        // let equality_constraint: bool;
+        // {
+        //     let name = task.first().unwrap();
+        //     equality_constraint = name.contains("impl") || name.contains("primitive");
+        // }
         let end = task.pop().unwrap();
         let end_split = end.split(" - ").collect::<Vec<&str>>();
         let end_type = end_split[1];
@@ -879,6 +885,13 @@ fn add_task_network(
         let st = create_subtask(context, c, prez, params, tn, timepoints, start_value, end_value);
         task_ends.insert(end, st.end);
         task_starts.insert(start, st.start);
+
+        // TODO Antoine: Uncomment
+        // Force the task to be equal to its parent
+        // if equality_constraint {
+        //     ch.constraints.push(Constraint::eq(ch.start, st.start));
+        //     ch.constraints.push(Constraint::eq(st.end, ch.end));
+        // }
 
         // Force the task to be in its parent
         // ch.constraints.push(Constraint::lt(ch.start, st.start + FAtom::EPSILON)); // <=
