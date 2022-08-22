@@ -63,10 +63,9 @@ type Eff = TempValSign;
 /// A python class to generate a planning problem with chronicles.
 #[pyclass]
 struct ChronicleProblem {
-    types: Vec<(Sym, Option<Sym>)>,     // Type symbol with its optional parent type symbol
-    constants: HashMap<Sym, bool>,      // Map a symbol to a boolean representing if the symbol is a constant
-    symbols: Vec<(Sym, Sym)>,           // Symbol with its type symbol
-    timepoints: HashMap<String, FAtom>, // Map a timepoint symbol with its instance
+    types: Vec<(Sym, Option<Sym>)>, // Type symbol with its optional parent type symbol
+    constants: HashMap<Sym, bool>,  // Map a symbol to a boolean representing if the symbol is a constant
+    symbols: Vec<(Sym, Sym)>,       // Symbol with its type symbol
     symbol_table: Option<SymbolTable>,
     state_variables: Vec<StateFun>,
     context: Option<Ctx>,
@@ -93,7 +92,6 @@ impl ChronicleProblem {
             ],
             constants: HashMap::new(),
             symbols: vec![],
-            timepoints: HashMap::new(),
             symbol_table: None,
             state_variables: vec![],
             context: None,
@@ -203,7 +201,8 @@ impl ChronicleProblem {
             &mut vec![],
             tasks,
             constraints,
-            &mut self.timepoints,
+            "__GLOBAL_START__",
+            "__GLOBAL_END__",
         );
     }
 
@@ -224,44 +223,36 @@ impl ChronicleProblem {
         let sv = satom_from_signature(self.context.as_mut().unwrap(), effect);
         let ch = self.init_ch.as_mut().unwrap();
 
-        let start: FAtom = if let Some(start) = self.timepoints.get(value_start) {
-            *start
-        } else {
+        let start: FAtom = {
             let id_start = if value_start.len() >= 5 {
                 &value_start[..5]
             } else {
                 value_start
             };
 
-            let start = if id_start == "__s__" || id_start == "__d__" {
+            if id_start == "__s__" || id_start == "__d__" {
                 ch.start
             } else if id_start == "__e__" {
                 ch.end
             } else {
                 panic!("unsupported start case {}", value_start)
-            };
-            self.timepoints.insert(value_start.to_string(), start);
-            start
+            }
         };
 
-        let end: FAtom = if let Some(end) = self.timepoints.get(value_end) {
-            *end
-        } else {
+        let end: FAtom = {
             let id_end = if value_end.len() >= 5 {
                 &value_end[..5]
             } else {
                 value_end
             };
 
-            let end = if id_end == "__e__" {
+            if id_end == "__e__" {
                 ch.end
             } else if id_end == "__s__" || id_end == "__d__" {
                 ch.start
             } else {
                 panic!("unsupported end case {}", value_end)
-            };
-            self.timepoints.insert(value_end.to_string(), end);
-            end
+            }
         };
 
         ch.effects.push(Effect {
@@ -470,7 +461,6 @@ impl ChronicleProblem {
         params.push(start.into());
         let start = FAtom::from(start);
         let start = FAtom::new(start.num + ch_delay_start, start.denom);
-        self.timepoints.insert(ch_value_start.to_string(), start);
 
         let end: FAtom = if kind == ChronicleKind::Action && (ch_value_start == ch_value_end) {
             start + FAtom::EPSILON
@@ -482,7 +472,6 @@ impl ChronicleProblem {
             end.into()
         };
         let end = FAtom::new(end.num + ch_delay_end, end.denom);
-        self.timepoints.insert(ch_value_end.to_string(), end);
 
         // Name & Parameters
         let mut name: Vec<SAtom> = vec![context
@@ -557,44 +546,36 @@ impl ChronicleProblem {
                 sv.push(*args.get(value_arg).unwrap());
             }
 
-            let start = if let Some(start) = self.timepoints.get(value_start) {
-                *start
-            } else {
+            let start = {
                 let id_start = if value_start.len() >= 5 {
                     &value_start[..5]
                 } else {
                     value_start
                 };
-                let start = if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
+                if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
                     ch.start
                 } else if id_start == "__e__" || value_start == ch_value_end {
                     ch.end
                 } else {
                     panic!("unsupported start case: {}", value_start);
-                };
-                self.timepoints.insert(value_start.to_string(), start);
-                start
+                }
             };
             let start = FAtom::new(start.num + delay_start, start.denom);
 
-            let end = if let Some(end) = self.timepoints.get(value_end) {
-                *end
-            } else {
+            let end = {
                 let id_end = if value_end.len() >= 5 {
                     &value_end[..5]
                 } else {
                     value_end
                 };
 
-                let end = if id_end == "__e__" || id_end == "__d__" || value_end == ch_value_end {
+                if id_end == "__e__" || id_end == "__d__" || value_end == ch_value_end {
                     ch.end
                 } else if id_end == "__s__" || value_end == ch_value_start {
                     ch.start + FAtom::EPSILON
                 } else {
                     panic!("unsupported end case: {}", value_end);
-                };
-                self.timepoints.insert(value_end.to_string(), end);
-                end
+                }
             };
             let end = FAtom::new(end.num + delay_end, end.denom);
 
@@ -632,36 +613,30 @@ impl ChronicleProblem {
                 .map(|e| e.state_var.as_slice())
                 .any(|x| x == sv.as_slice());
 
-            let start = if let Some(start) = self.timepoints.get(value_start) {
-                *start
-            } else {
+            let start = {
                 let id_start = if value_start.len() >= 5 {
                     &value_start[..5]
                 } else {
                     value_start
                 };
-                let start = if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
+                if id_start == "__s__" || id_start == "__d__" || value_start == ch_value_start {
                     ch.start
                 } else if id_start == "__e__" || value_start == ch_value_end {
                     ch.end
                 } else {
                     panic!("unsupported start case: {}", value_start);
-                };
-                self.timepoints.insert(value_start.to_string(), start);
-                start
+                }
             };
             let start = FAtom::new(start.num + delay_start, start.denom);
 
-            let end = if let Some(end) = self.timepoints.get(value_end) {
-                *end
-            } else {
+            let end = {
                 let id_end = if value_end.len() >= 5 {
                     &value_end[..5]
                 } else {
                     value_end
                 };
 
-                let end = if id_end == "__e__" || value_end == ch_value_end {
+                if id_end == "__e__" || value_end == ch_value_end {
                     ch.end
                 } else if id_end == "__s__" || value_end == ch_value_start {
                     ch.start
@@ -673,9 +648,7 @@ impl ChronicleProblem {
                     }
                 } else {
                     panic!("unsupported end case: {}", value_end);
-                };
-                self.timepoints.insert(value_end.to_string(), end);
-                end
+                }
             };
             let end = FAtom::new(end.num + delay_end, end.denom);
 
@@ -708,15 +681,14 @@ impl ChronicleProblem {
                 let left_var: Vec<&str> = left_value.split(" + ").collect();
                 let left_delay: i32 = left_var[1].parse().unwrap();
 
-                let left_value = if let Some(left_value) = self.timepoints.get(left_var[0]) {
-                    *left_value
-                } else {
+                let left_value = {
                     let id_left = if left_var[0].len() >= 5 {
                         &left_var[0][..5]
                     } else {
                         left_var[0]
                     };
-                    let left_value: FAtom = if id_left == "__s__" || left_var[0] == ch_value_start {
+
+                    if id_left == "__s__" || left_var[0] == ch_value_start {
                         ch.start
                     } else if id_left == "__e__" || left_var[0] == ch_value_end {
                         ch.end
@@ -724,23 +696,19 @@ impl ChronicleProblem {
                         FAtom::new(IAtom::ZERO, TIME_SCALE)
                     } else {
                         panic!("unsupported left case: {}", left_var[0]);
-                    };
-                    self.timepoints.insert(left_var[0].to_string(), left_value);
-                    left_value
+                    }
                 };
                 let left_value: FAtom = FAtom::new(left_value.num + left_delay, left_value.denom);
 
                 let right_var: Vec<&str> = right_value.split(" + ").collect();
                 let right_delay: i32 = right_var[1].parse().unwrap();
-                let right_value = if let Some(right_value) = self.timepoints.get(right_var[0]) {
-                    *right_value
-                } else {
+                let right_value = {
                     let id_right = if right_var[0].len() >= 5 {
                         &right_var[0][..5]
                     } else {
                         right_var[0]
                     };
-                    let right_value: FAtom = if id_right == "__s__" || right_var[0] == ch_value_start {
+                    if id_right == "__s__" || right_var[0] == ch_value_start {
                         ch.start
                     } else if id_right == "__e__" || right_var[0] == ch_value_end {
                         ch.end
@@ -748,9 +716,7 @@ impl ChronicleProblem {
                         FAtom::new(IAtom::ZERO, TIME_SCALE)
                     } else {
                         panic!("unsupported right case: {}", right_var[0]);
-                    };
-                    self.timepoints.insert(right_var[0].to_string(), right_value);
-                    right_value
+                    }
                 };
                 let right_value: FAtom = FAtom::new(right_value.num + right_delay, right_value.denom);
 
@@ -796,7 +762,8 @@ impl ChronicleProblem {
                     &mut params,
                     subtasks,
                     subtasks_constraints,
-                    &mut self.timepoints,
+                    ch_value_start,
+                    ch_value_end,
                 );
             }
         }
@@ -826,6 +793,8 @@ impl ChronicleProblem {
 ///     - List of task temporal signatures of the task network.
 /// - constraints : list of temporal constraints
 ///     - List of temporal constraints between the tasks of the task network.
+/// - ch_value_start / ch_value_end:
+///     - Names of the start/end timepoints of the containing chronicle.
 #[allow(clippy::too_many_arguments)] // this function has too many arguments (8/7)
 fn add_task_network(
     c: Container,
@@ -835,7 +804,8 @@ fn add_task_network(
     params: &mut Vec<Variable>,
     tasks: Vec<TempSign>,
     constraints: Vec<TemporalConstraint>,
-    timepoints: &mut HashMap<String, FAtom>,
+    ch_value_start: &str,
+    ch_value_end: &str,
 ) {
     let mut task_starts: HashMap<String, FAtom> = HashMap::new();
     let mut task_ends: HashMap<String, FAtom> = HashMap::new();
@@ -864,12 +834,38 @@ fn add_task_network(
             satom_from_signature(context, task)
         };
         let prez = ch.presence;
-        let st = create_subtask(context, c, prez, params, tn);
-        task_ends.insert(end, st.end);
-        task_starts.insert(start, st.start);
-        timepoints.insert(start_value.to_string(), st.start);
-        timepoints.insert(end_value.to_string(), st.end);
-        ch.subtasks.push(st);
+
+        let start_tp = if start_value == ch_value_start {
+            ch.start
+        } else {
+            // TODO: many naming patterns are ignored
+            let start = context
+                .model
+                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskStart);
+            params.push(start.into());
+            start.into()
+        };
+        let end_tp = if end_value == ch_value_end {
+            ch.end
+        } else {
+            // TODO: many naming patterns are ignored
+            let end = context
+                .model
+                .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskEnd);
+
+            params.push(end.into());
+            end.into()
+        };
+
+        task_starts.insert(start, start_tp);
+        task_ends.insert(end, end_tp);
+
+        ch.subtasks.push(SubTask {
+            id: None,
+            start: start_tp,
+            end: end_tp,
+            task_name: tn,
+        });
     }
 
     for constraint in constraints {
@@ -914,49 +910,6 @@ fn add_task_network(
         };
 
         ch.constraints.push(new_constraint);
-    }
-}
-
-/// Creates a subtask for the problem.
-///
-/// Parameters
-/// ----------
-/// - context : Ctx
-///     - The context of the problem.
-/// - c : Container
-///     - Container used for the subtasks creations.
-/// - pres : Lit
-///     - Whether or not the subtask is part of the solution.
-/// - params : list of Variable, optional
-///     - Variables with which the solver will be able to interact.
-/// - task_name : list of SAtom
-///     - The task to create with its name and its arguments.
-///       Typically the return of `satom_from_signature()`.
-fn create_subtask(
-    context: &mut Ctx,
-    c: Container,
-    prez: Lit,
-    params: &mut Vec<Variable>,
-    task_name: Vec<SAtom>,
-) -> SubTask {
-    let start = context
-        .model
-        .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskStart);
-    let end = context
-        .model
-        .new_optional_fvar(0, INT_CST_MAX, TIME_SCALE, prez, c / VarType::TaskEnd);
-    if !params.is_empty() {
-        params.push(start.into());
-        params.push(end.into());
-    }
-    let start = FAtom::from(start);
-    let end = FAtom::from(end);
-    let id = None;
-    SubTask {
-        id,
-        start,
-        end,
-        task_name,
     }
 }
 
