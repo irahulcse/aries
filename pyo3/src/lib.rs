@@ -216,9 +216,11 @@ impl ChronicleProblem {
         let sign_end: String = effect.pop().unwrap();
         let sign_end: Vec<&str> = sign_end.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
         let value_end: &str = sign_end[0];
+        let delay_end: i32 = sign_end[1].parse().unwrap();
         let sign_start: String = effect.pop().unwrap();
         let sign_start: Vec<&str> = sign_start.split(" - ").collect::<Vec<&str>>()[0].split(" + ").collect();
         let value_start: &str = sign_start[0];
+        let delay_start: i32 = sign_start[1].parse().unwrap();
         let value: bool = effect.pop().unwrap().to_lowercase().parse().unwrap();
         let sv = satom_from_signature(self.context.as_mut().unwrap(), effect);
         let ch = self.init_ch.as_mut().unwrap();
@@ -238,6 +240,7 @@ impl ChronicleProblem {
                 panic!("unsupported start case {}", value_start)
             }
         };
+        let start = FAtom::new(start.num + delay_start, start.denom);
 
         let end: FAtom = {
             let id_end = if value_end.len() >= 5 {
@@ -254,6 +257,7 @@ impl ChronicleProblem {
                 panic!("unsupported end case {}", value_end)
             }
         };
+        let end = FAtom::new(end.num + delay_end, end.denom);
 
         ch.effects.push(Effect {
             transition_start: start,
