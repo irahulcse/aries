@@ -7,8 +7,10 @@ use aries_planners::solver::Metric;
 use aries_planning::chronicles::analysis::hierarchical_is_non_recursive;
 use aries_planning::chronicles::FiniteProblem;
 use async_trait::async_trait;
+use clap::Parser;
 use futures_util::StreamExt;
 use prost::Message;
+use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -95,6 +97,21 @@ pub fn solve(problem: &up::Problem, on_new_sol: impl Fn(up::Plan) + Clone) -> Re
 #[derive(Default)]
 pub struct UnifiedPlanningService {}
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// [default: 127.0.0.1]
+    #[arg(short, long)]
+    address: Option<String>,
+
+    /// [default: 2222]
+    #[arg(short, long)]
+    port: Option<u16>,
+
+    #[arg(short, long)]
+    buf: Option<String>,
+}
+
 #[async_trait]
 impl UnifiedPlanning for UnifiedPlanningService {
     type planOneShotStream = ReceiverStream<Result<PlanGenerationResult, Status>>;
@@ -163,6 +180,8 @@ impl UnifiedPlanning for UnifiedPlanningService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let cli = Cli::parse();
+
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         default_panic(info);
@@ -170,14 +189,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
 
     // Set address to localhost
-    let addr = "127.0.0.1:2222".parse()?;
+    let mut addr = cli
+        .address
+        .clone()
+        .unwrap_or_else(|| String::from("127.0.0.1"))
+        .to_owned();
+    addr.push(':');
+    addr.push_str(cli.port.unwrap_or(2222).to_string().deref());
+    let addr = addr.parse()?;
     let upf_service = UnifiedPlanningService::default();
 
-    // Check if any argument is provided
-    let buf = std::env::args().nth(1);
-
-    // If argument is provided, then read the file and send it to the server
-    if let Some(buf) = buf {
+    // If buf argument is provided, then read the file and send it to the server
+    if let Some(buf) = cli.buf {
         let problem = std::fs::read(&buf)?;
         let problem = Problem::decode(problem.as_slice())?;
         let plan_request = PlanRequest {
