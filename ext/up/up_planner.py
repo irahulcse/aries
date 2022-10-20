@@ -77,14 +77,26 @@ log_file = "/tmp/log-aries"
 class AriesLocal(GRPCPlanner):
     """This class implements a specific gRPC solver that will compile and launch Aries from sources in the current directory."""
 
-    def __init__(self, port: int):
-        print("Compiling...")
-        build = subprocess.Popen(aries_build_cmd, shell=True, cwd=aries_path)
-        build.wait()
+    def __init__(
+        self,
+        port: int,
+        stdout: Optional[IO[str]] = None,
+        compilation: bool = True,
+    ):
+        # if compilation:
+        if compilation:
+            print("Compiling...")
+            build = subprocess.Popen(aries_build_cmd, shell=True, cwd=aries_path)
+            build.wait()
+
+        logs = stdout or open(log_file, mode="w", encoding="utf-8")
         print(f"Launching Aries gRPC server (logs at {log_file})...")
-        logs = open(log_file, "w")
         subprocess.Popen(
-            [f"{aries_exe}"], cwd=aries_path, shell=True, stdout=logs, stderr=logs
+            [aries_exe, "-p", str(port)],
+            cwd=aries_path,
+            # shell=True,
+            stdout=logs,
+            stderr=logs,
         )
         # subprocess.Popen([f"{aries_exe}"], cwd=aries_path, shell=True, stdout=sys.stdout, stderr=sys.stderr)
         time.sleep(0.1)  # Wait to make sure the server is up and running
