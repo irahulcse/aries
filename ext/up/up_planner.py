@@ -3,13 +3,16 @@
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import IO, Callable, Optional
 
 import grpc
+from test_problems import problems
 
 # Use the local version of the UP in the `ext/up/unified_planning` git submodule
-sys.path.insert(0, "unified_planning")
-sys.path.insert(0, "ext/up/unified_planning")
+UP_DIR = Path(__file__).parent.resolve() / "unified_planning"
+if UP_DIR not in sys.path:
+    sys.path.insert(0, UP_DIR.as_posix())
 
 
 import unified_planning as up
@@ -17,12 +20,7 @@ import unified_planning.engines as engines
 import unified_planning.engines.mixins as mixins
 import unified_planning.grpc.generated.unified_planning_pb2 as proto
 import unified_planning.grpc.generated.unified_planning_pb2_grpc as grpc_api
-from test_problems import problems
-from unified_planning.engines.results import (
-    LogLevel,
-    PlanGenerationResult,
-    PlanGenerationResultStatus,
-)
+from unified_planning.engines.results import PlanGenerationResultStatus
 from unified_planning.grpc.proto_reader import ProtobufReader
 from unified_planning.grpc.proto_writer import ProtobufWriter
 from unified_planning.model.htn import *
@@ -70,9 +68,9 @@ class GRPCPlanner(engines.engine.Engine, mixins.OneshotPlannerMixin):
                     pass  # Intermediate plan but no callback
 
 
-aries_path = "."  # Assumes that the script is launched from whithin Aries's repository
-aries_build_cmd = f"cargo build --profile ci --bin up-server"
-aries_exe = f"/home/abitmonnot/work/aries/target/ci/up-server"
+aries_path = Path(__file__).parent.parent.parent.as_posix()
+aries_build_cmd = "cargo build --profile ci --bin up-server"
+aries_exe = (Path(aries_path) / "target/ci/up-server").as_posix()
 log_file = "/tmp/log-aries"
 
 
@@ -89,9 +87,7 @@ class AriesLocal(GRPCPlanner):
             [f"{aries_exe}"], cwd=aries_path, shell=True, stdout=logs, stderr=logs
         )
         # subprocess.Popen([f"{aries_exe}"], cwd=aries_path, shell=True, stdout=sys.stdout, stderr=sys.stderr)
-        time.sleep(
-            0.1
-        )  # Let a few milliseconds pass to make sure the server is up and running
+        time.sleep(0.1)  # Wait to make sure the server is up and running
         GRPCPlanner.__init__(self, host="localhost", port=port)
 
     @staticmethod
