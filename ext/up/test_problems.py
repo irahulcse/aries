@@ -1,12 +1,15 @@
+import sys
+from pathlib import Path
+
+UP_DIR = Path(__file__).parent.resolve() / "unified_planning"
+if UP_DIR not in sys.path:
+    sys.path.insert(0, UP_DIR.as_posix())
+
 from unified_planning.shortcuts import *
 from unified_planning.model.htn import *
 
-sys.path.insert(0, 'unified_planning')
-
 Location = UserType("Location")
-objects = [
-    Object(f"l{i}", Location) for i in range(5)
-]
+objects = [Object(f"l{i}", Location) for i in range(5)]
 t1 = Task("t1")
 t2 = Task("t2")
 t3 = Task("t3")
@@ -64,11 +67,11 @@ def problems():
     add_method(pb, "m21", t2, actions[0], actions[1])
     add_method(pb, "m31", t3, actions[2], actions[3])
     add_method(pb, "m32", t3, actions[4], actions[5], actions[6])
-    export(pb, 4,    1, 1,   1, 1,   1, 1, 1)
-    export(pb, 3,    1, 1,   1, 1,   0, 0, 1)
-    export(pb, 5,    1, 1,   1, 10,   1, 1, 1)
-    export(pb, 13,   1, 1,   1, 10,   1, 10, 1)
-    export(pb, 202,   1, 1,   100, 100,   100, 100, 100)
+    export(pb, 4, 1, 1, 1, 1, 1, 1, 1)
+    export(pb, 3, 1, 1, 1, 1, 0, 0, 1)
+    export(pb, 5, 1, 1, 1, 10, 1, 1, 1)
+    export(pb, 13, 1, 1, 1, 10, 1, 10, 1)
+    export(pb, 202, 1, 1, 100, 100, 100, 100, 100)
     return pbs
 
 
