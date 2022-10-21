@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import IO, Optional
 
+import click
 from up_planner import AriesLocal
 
 UP_DIR = Path(__file__).parent.resolve() / "unified_planning"
@@ -16,12 +17,28 @@ from unified_planning.io.pddl_reader import PDDLReader  # noqa: E402
 DEFAULT_PORT = 2222
 
 
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.argument("domain", type=str)
+@click.argument("problem", type=str)
+@click.option("-o", "--output", type=str, help="Output file for the planner.")
+@click.option(
+    "-p",
+    "--port",
+    type=int,
+    default=DEFAULT_PORT,
+    help="Port used by the planner.",
+    show_default=True,
+)
 def plan(
     domain: str,
     problem: str,
-    output: str = None,
+    output: str | None,
     port: int = DEFAULT_PORT,
 ) -> None:
+    """
+    Parses the given HDDL files and solves the associated problem.
+    """
+
     def solve(stdout: Optional[IO[str]] = None) -> None:
         planner = AriesLocal(port, stdout, compilation=False)
         planner.solve(up_problem)
@@ -35,21 +52,4 @@ def plan(
 
 
 if __name__ == "__main__":
-    import getopt
-
-    # Get the arguments from the command line and parse them
-    domain, problem = sys.argv[1:3]
-    output, port = None, DEFAULT_PORT
-    try:
-        opts, args = getopt.getopt(sys.argv[3:], "o:p:", ["output=", "port="])
-    except getopt.GetoptError as err:
-        print(err)
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt in ("-o", "--output"):
-            output = arg
-        elif opt in ("-p", "--port"):
-            port = int(arg)
-
-    # Start the planner
-    plan(domain, problem, output, port)
+    plan()  # pylint: disable=no-value-for-parameter
