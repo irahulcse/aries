@@ -108,8 +108,9 @@ struct Cli {
     #[arg(short, long)]
     port: Option<u16>,
 
+    /// Binary problem to solve
     #[arg(short, long)]
-    buf: Option<String>,
+    bin: Option<String>,
 }
 
 #[async_trait]
@@ -200,7 +201,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let upf_service = UnifiedPlanningService::default();
 
     // If buf argument is provided, then read the file and send it to the server
-    if let Some(buf) = cli.buf {
+    if let Some(buf) = cli.bin {
         let problem = std::fs::read(&buf)?;
         let problem = Problem::decode(problem.as_slice())?;
         let plan_request = PlanRequest {
