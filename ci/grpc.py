@@ -12,7 +12,7 @@ if build_result != 0:
 
 solver = "target/ci/up-server"
 
-solver_cmd = solver + " {instance}"
+solver_cmd = solver + " -b {instance}"
 
 instances = [
     "basic",
@@ -21,7 +21,7 @@ instances = [
     "hierarchical_blocks_world",
     "hierarchical_blocks_world_object_as_root",
     "hierarchical_blocks_world_with_object",
-    "matchcellar"
+    "matchcellar",
 ]
 problem_files = [f"./ext/up/bins/problems/{name}.bin" for name in instances]
 
