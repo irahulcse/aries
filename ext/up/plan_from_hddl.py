@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 # pylint: disable=redefined-outer-name
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from typing import IO, Optional
