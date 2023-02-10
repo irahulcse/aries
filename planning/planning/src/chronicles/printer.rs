@@ -250,6 +250,9 @@ impl<'a> Printer<'a> {
             ConstraintType::Or => {
                 print!("or")
             }
+            ConstraintType::Sum(_) => {
+                print!("sum")
+            }
         }
         print!(" ");
         self.list(&c.variables);

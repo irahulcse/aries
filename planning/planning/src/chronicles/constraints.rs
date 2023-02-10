@@ -45,7 +45,7 @@ impl Constraint {
     pub fn eq(a: impl Into<Atom>, b: impl Into<Atom>) -> Constraint {
         Constraint {
             variables: vec![a.into(), b.into()],
-            tpe: Neq,
+            tpe: Eq,
             value: None,
         }
     }
@@ -68,6 +68,14 @@ impl Constraint {
         Constraint {
             variables: vec![],
             tpe: ConstraintType::Duration(dur),
+            value: None,
+        }
+    }
+
+    pub fn sum(mut vars: Vec<impl Into<Atom>>, sum: Sum) -> Constraint {
+        Constraint {
+            variables: vars.drain(..).map(|v| v.into()).collect(),
+            tpe: ConstraintType::Sum(sum),
             value: None,
         }
     }
@@ -101,6 +109,13 @@ pub enum ConstraintType {
     Neq,
     Duration(Duration),
     Or,
+    Sum(Sum),
+}
+
+#[derive(Clone, Debug)]
+pub struct Sum {
+    pub signs: Vec<bool>,
+    pub value: IntCst,
 }
 
 impl Substitute for ConstraintType {

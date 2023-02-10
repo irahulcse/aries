@@ -15,7 +15,6 @@ use aries_planning::chronicles::*;
 use env_param::EnvParam;
 use std::convert::TryFrom;
 use std::ptr;
-
 /// Parameter that defines the symmetry breaking strategy to use.
 /// The value of this parameter is loaded from the environment variable `ARIES_LCP_SYMMETRY_BREAKING`.
 /// Possible values are `none` and `simple` (default).
@@ -627,10 +626,30 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                 ConstraintType::Or => {
                     let mut disjuncts = Vec::with_capacity(constraint.variables.len());
                     for v in &constraint.variables {
-                        let disjunct: Lit = Lit::try_from(*v)?;
+                        let disjunct: Lit = Lit::try_from(*v).context("or")?;
                         disjuncts.push(disjunct);
                     }
                     model.bind(or(disjuncts), value)
+                }
+                ConstraintType::Sum(sum) => {
+                    assert_eq!(sum.signs.len(), constraint.variables.len());
+                    let mut lsum = LinearSum::zero();
+
+                    for (atom, neg) in constraint.variables.iter().zip(&sum.signs) {
+                        let iatom: IAtom = (*atom).try_into().context("sum")?;
+                        if *neg {
+                            lsum = lsum.add(-iatom.var.or_zero());
+                            lsum = lsum.add(-iatom.shift);
+                        } else {
+                            lsum = lsum.add(iatom.var.or_zero());
+                            lsum = lsum.add(iatom.shift);
+                        }
+                    }
+
+                    let value = sum.value;
+
+                    model.enforce(lsum.clone().leq(value), []);
+                    model.enforce(lsum.geq(value), []);
                 }
             }
         }
