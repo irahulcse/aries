@@ -538,6 +538,7 @@ impl<'a> ChronicleFactory<'a> {
             let param: SAtom = param.try_into()?;
             task_name.push(param);
         }
+        let task_name = task_name.iter().map(|satom| Atom::Sym(*satom)).collect();
         self.chronicle.subtasks.push(SubTask {
             id: Some(subtask.id.clone()),
             start,
@@ -914,7 +915,7 @@ fn read_action(
         ChronicleKind::Action => start + 1, // non-temporal actions have a duration of 1
     };
 
-    let mut name: Vec<SAtom> = Vec::with_capacity(1 + action.parameters.len());
+    let mut name: Vec<Atom> = Vec::with_capacity(1 + action.parameters.len());
     let base_name = &Sym::from(action.name.clone());
     name.push(
         context
@@ -1095,7 +1096,7 @@ fn read_method(container: Container, method: &up::Method, context: &mut Ctx) -> 
         end.into()
     };
 
-    let mut name: Vec<SAtom> = Vec::with_capacity(1 + method.parameters.len());
+    let mut name: Vec<Atom> = Vec::with_capacity(1 + method.parameters.len());
     let base_name = &Sym::from(method.name.clone());
     name.push(
         context
@@ -1150,6 +1151,7 @@ fn read_method(container: Container, method: &up::Method, context: &mut Ctx) -> 
         let param: SAtom = param.try_into()?;
         task_name.push(param);
     }
+    let task_name = task_name.iter().map(|satom| Atom::from(*satom)).collect();
     factory.chronicle.task = Some(task_name);
 
     for subtask in &method.subtasks {
