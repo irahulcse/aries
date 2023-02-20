@@ -202,7 +202,7 @@ pub fn populate_with_task_network(pb: &mut FiniteProblem, spec: &Problem, max_de
                     let template_task_name = template.chronicle.task.as_ref().unwrap();
                     #[allow(clippy::needless_range_loop)]
                     for i in 0..template_task_name.len() {
-                        let _ = sub.add_sym_expr_unification(template_task_name[i], task.task_name[i]);
+                        let _ = sub.add_expr_unification(template_task_name[i], task.task_name[i]);
                     }
                 }
 
