@@ -634,15 +634,34 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                 ConstraintType::Sum(sum) => {
                     assert_eq!(sum.signs.len(), constraint.variables.len());
                     let mut lsum = LinearSum::zero();
+                    let variables = &constraint.variables;
+                    let mut factor: IntCst = 1;
+                    for var in variables {
+                        if let Atom::Fixed(f) = var {
+                            let denum = f.denom;
+                            if factor % denum != 0 {
+                                factor = factor * denum
+                            }
+                        }
+                    }
 
-                    for (atom, neg) in constraint.variables.iter().zip(&sum.signs) {
-                        let iatom: IAtom = (*atom).try_into().context("sum")?;
-                        if *neg {
-                            lsum = lsum.add(-iatom.var.or_zero());
-                            lsum = lsum.add(-iatom.shift);
-                        } else {
-                            lsum = lsum.add(iatom.var.or_zero());
-                            lsum = lsum.add(iatom.shift);
+                    for (atom, neg) in variables.iter().zip(&sum.signs) {
+                        let factor = match neg {
+                            true => -factor,
+                            false => factor,
+                        };
+
+                        match atom {
+                            Atom::Int(i) => {
+                                lsum = lsum.add(LinearTerm::new(factor, i.var, true));
+                                lsum = lsum.add(factor * i.shift);
+                            }
+                            Atom::Fixed(f) => {
+                                let factor = factor / f.denom;
+                                lsum = lsum.add(LinearTerm::new(factor, f.num.var, true));
+                                lsum = lsum.add(factor * f.num.shift);
+                            }
+                            _ => todo!(),
                         }
                     }
 
