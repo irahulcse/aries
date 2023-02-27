@@ -1,5 +1,5 @@
 use crate::core::IntCst;
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct IntDomain {

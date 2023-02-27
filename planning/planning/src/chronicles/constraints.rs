@@ -72,9 +72,9 @@ impl Constraint {
         }
     }
 
-    pub fn sum(mut vars: Vec<impl Into<Atom>>, sum: Sum) -> Constraint {
+    pub fn sum(sum: Sum) -> Constraint {
         Constraint {
-            variables: vars.drain(..).map(|v| v.into()).collect(),
+            variables: vec![],
             tpe: ConstraintType::Sum(sum),
             value: None,
         }
@@ -112,9 +112,10 @@ pub enum ConstraintType {
     Sum(Sum),
 }
 
+/// A sum of linear terms with a common denominator
 #[derive(Clone, Debug)]
 pub struct Sum {
-    pub signs: Vec<bool>,
+    pub sum: LinearSum,
     pub value: IntCst,
 }
 

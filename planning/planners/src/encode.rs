@@ -15,6 +15,7 @@ use aries_planning::chronicles::*;
 use env_param::EnvParam;
 use std::convert::TryFrom;
 use std::ptr;
+
 /// Parameter that defines the symmetry breaking strategy to use.
 /// The value of this parameter is loaded from the environment variable `ARIES_LCP_SYMMETRY_BREAKING`.
 /// Possible values are `none` and `simple` (default).
@@ -632,40 +633,10 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                     model.bind(or(disjuncts), value)
                 }
                 ConstraintType::Sum(sum) => {
-                    assert_eq!(sum.signs.len(), constraint.variables.len());
-                    let mut lsum = LinearSum::zero();
-                    let variables = &constraint.variables;
-                    let mut factor: IntCst = 1;
-                    for var in variables {
-                        if let Atom::Fixed(f) = var {
-                            let denum = f.denom;
-                            if factor % denum != 0 {
-                                factor = factor * denum
-                            }
-                        }
-                    }
-
-                    for (atom, neg) in variables.iter().zip(&sum.signs) {
-                        let factor = match neg {
-                            true => -factor,
-                            false => factor,
-                        };
-
-                        match atom {
-                            Atom::Int(i) => {
-                                lsum = lsum.add(LinearTerm::new(factor, i.var, true));
-                                lsum = lsum.add(factor * i.shift);
-                            }
-                            Atom::Fixed(f) => {
-                                let factor = factor / f.denom;
-                                lsum = lsum.add(LinearTerm::new(factor, f.num.var, true));
-                                lsum = lsum.add(factor * f.num.shift);
-                            }
-                            _ => todo!(),
-                        }
-                    }
+                    //println!("debug linear: {:?} = {}", lsum, value);
 
                     let value = sum.value;
+                    let sum = sum.sum.clone();
 
                     model.enforce(lsum.clone().leq(value), []);
                     model.enforce(lsum.geq(value), []);
