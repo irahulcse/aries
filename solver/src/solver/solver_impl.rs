@@ -95,13 +95,17 @@ impl<Lbl: Label> Solver<Lbl> {
         self.sync.set_output(output);
     }
 
-    pub fn enforce<Expr: Into<ReifExpr>>(&mut self, bool_expr: Expr) {
+    pub fn enforce<Expr: Into<ReifExpr>>(&mut self, bool_expr: Expr, scope: impl IntoIterator<Item = Lit>) {
         assert_eq!(self.decision_level, DecLvl::ROOT);
-        self.model.enforce(bool_expr);
+        self.model.enforce(bool_expr, scope);
     }
-    pub fn enforce_all<Expr: Into<ReifExpr>>(&mut self, bools: impl IntoIterator<Item = Expr>) {
+    pub fn enforce_all<Expr: Into<ReifExpr>>(
+        &mut self,
+        bools: impl IntoIterator<Item = Expr>,
+        scope: impl IntoIterator<Item = Lit> + Clone,
+    ) {
         assert_eq!(self.decision_level, DecLvl::ROOT);
-        self.model.enforce_all(bools);
+        self.model.enforce_all(bools, scope);
     }
 
     /// Immediately adds the given constraint to the appropriate reasoner.
@@ -110,24 +114,19 @@ impl<Lbl: Label> Solver<Lbl> {
         let Constraint::Reified(expr, value) = constraint;
         let value = *value;
         assert_eq!(self.model.state.current_decision_level(), DecLvl::ROOT);
+        let scope = self.model.presence_literal(value.variable());
         match expr {
             &ReifExpr::Lit(lit) => {
-                assert_eq!(
-                    self.model.presence_literal(value.variable()),
-                    self.model.presence_literal(lit.variable())
-                );
-                if self.model.entails(value) {
-                    self.model.state.set(lit, Cause::Encoding)?;
-                } else if self.model.entails(!value) {
-                    self.model.state.set(!lit, Cause::Encoding)?;
-                } else if self.model.entails(lit) {
-                    self.model.state.set(value, Cause::Encoding)?;
-                } else if self.model.entails(!lit) {
-                    self.model.state.set(!value, Cause::Encoding)?;
-                } else {
-                    self.reasoners.sat.add_implication(value, lit);
-                    self.reasoners.sat.add_implication(lit, value);
-                }
+                let expr_scope = self.model.presence_literal(lit.variable());
+
+                assert!(self.model.state.implies(scope, expr_scope), "{lit:?} <=> {value:?}");
+                // dbg!(scope);
+                // dbg!(value);
+                // dbg!(lit);
+                // dbg!(expr);
+
+                self.add_clause([!value, lit], scope)?; // value => lit
+                self.add_clause([!lit, value], scope)?; // lit => value
                 Ok(())
             }
             ReifExpr::MaxDiff(diff) => {
@@ -141,13 +140,14 @@ impl<Lbl: Label> Solver<Lbl> {
             }
             ReifExpr::Or(disjuncts) => {
                 if self.model.entails(value) {
-                    self.reasoners.sat.add_clause(disjuncts);
+                    self.add_clause(disjuncts, scope)
                 } else if self.model.entails(!value) {
                     // (not (or a b ...))
                     // enforce the equivalent (and (not a) (not b) ....)
-                    for lit in disjuncts {
-                        self.model.state.set(!*lit, Cause::Encoding)?;
+                    for &lit in disjuncts {
+                        self.add_clause([!lit], scope)?;
                     }
+                    Ok(())
                 } else {
                     // l  <=>  (or a b ...)
                     let mut clause = Vec::with_capacity(disjuncts.len() + 1);
@@ -155,18 +155,15 @@ impl<Lbl: Label> Solver<Lbl> {
                     clause.push(!value);
                     disjuncts.iter().for_each(|l| clause.push(*l));
                     if let Some(clause) = Disjunction::new_non_tautological(clause) {
-                        self.reasoners.sat.add_clause(clause);
+                        self.add_clause(clause, scope)?;
                     }
                     // make (or a b ...) => l    <=> (and (a => l) (b => l) ...)
                     for &disjunct in disjuncts {
                         // enforce a => l
-                        let clause = vec![!disjunct, value];
-                        if let Some(clause) = Disjunction::new_non_tautological(clause) {
-                            self.reasoners.sat.add_clause(clause);
-                        }
+                        self.add_clause([!disjunct, value], scope)?;
                     }
+                    Ok(())
                 }
-                Ok(())
             }
             ReifExpr::And(_) => {
                 let equiv = Constraint::Reified(!expr.clone(), !value);
@@ -174,10 +171,55 @@ impl<Lbl: Label> Solver<Lbl> {
             }
             ReifExpr::Linear(lin) => {
                 assert!(self.model.entails(value), "Unsupported reified linear constraints.");
+                assert_eq!(self.model.presence_literal(value.variable()), Lit::TRUE);
                 self.reasoners.cp.add_linear_constraint(lin);
                 Ok(())
             }
         }
+    }
+
+    fn add_clause(&mut self, clause: impl Into<Disjunction>, scope: Lit) -> Result<(), InvalidUpdate> {
+        assert_eq!(self.current_decision_level(), DecLvl::ROOT);
+        let clause = clause.into();
+        // only keep literals that may become true
+        let clause: Vec<Lit> = clause.into_iter().filter(|&l| !self.model.entails(!l)).collect();
+        let propagatable = self.scoped_disjunction(clause, scope);
+        if propagatable.is_empty() {
+            return Err(InvalidUpdate(Lit::TRUE, Origin::Direct(DirectOrigin::Encoding)));
+        }
+        self.reasoners.sat.add_clause(propagatable);
+        Ok(())
+    }
+
+    /// From a disjunction with optional elements, creates a clause taht can be safely unit propagated
+    pub(crate) fn scoped_disjunction(&self, disjuncts: impl Into<Disjunction>, scope: Lit) -> Disjunction {
+        let prez = |l: Lit| self.model.presence_literal(l.variable());
+        // let optional = |l: Lit| prez(l) == Lit::TRUE;
+        let disjuncts = disjuncts.into();
+        if scope == Lit::TRUE {
+            return disjuncts;
+        }
+        if disjuncts.is_empty() {
+            // the disjunction can never be true and thus must be absent
+            return Disjunction::from([!scope]);
+        }
+        if disjuncts
+            .literals()
+            .iter()
+            .all(|&l| self.model.state.implies(prez(l), scope))
+        {
+            return disjuncts;
+        }
+        let mut disjuncts = Vec::from(disjuncts);
+        disjuncts.push(!scope);
+
+        // let optionals: Vec<Lit> = disjuncts.iter().copied().filter(|l| optional(*l)).collect();
+        // if optionals.is_empty() {
+        //     return disjuncts.into();
+        // }
+        // let non_optionals: Vec<Lit> = disjuncts.iter().copied().filter(|l| !optional(*l)).collect();
+
+        disjuncts.into()
     }
 
     /// Post all constraints of the model that have not been previously posted.
@@ -620,5 +662,53 @@ impl<Lbl: Label> Clone for Solver<Lbl> {
 impl<Lbl: Label> Shaped<Lbl> for Solver<Lbl> {
     fn get_shape(&self) -> &ModelShape<Lbl> {
         self.model.get_shape()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::core::literals::Disjunction;
+    use crate::core::Lit;
+
+    type Model = crate::model::Model<&'static str>;
+    type Solver = crate::solver::Solver<&'static str>;
+
+    #[test]
+    fn test_scoped_disjunction() {
+        let T = Lit::TRUE;
+        let mut m = Model::new();
+
+        let px = m.new_presence_variable(Lit::TRUE, "px").true_lit();
+        let x1 = m.new_optional_bvar(px, "x1").true_lit();
+        let x2 = m.new_optional_bvar(px, "x2").true_lit();
+
+        let py = m.new_presence_variable(Lit::TRUE, "py").true_lit();
+        let y1 = m.new_optional_bvar(py, "y1").true_lit();
+        let y2 = m.new_optional_bvar(py, "y2").true_lit();
+
+        let pxy = m.get_conjunctive_scope(&[px, py]);
+        let xy1 = m.new_optional_bvar(pxy, "xy1").true_lit();
+        let xy2 = m.new_optional_bvar(pxy, "xy2").true_lit();
+
+        let s = &Solver::new(m);
+
+        fn check(s: &Solver, scope: Lit, clause: impl Into<Disjunction>, expected: impl Into<Disjunction>) {
+            let clause = clause.into();
+            let result = s.scoped_disjunction(clause, scope);
+            let expected = expected.into();
+            assert_eq!(result, expected);
+        }
+
+        check(s, px, [x1], [x1]);
+        // check(s, T, [!px, x1], [x1]);
+        check(s, px, [x1, x2], [x1, x2]);
+        // check(s, T, [!px, x1, x2], [x1, x2]);
+        check(s, px, [xy1], [xy1]);
+        check(s, py, [xy1], [xy1]);
+        check(s, pxy, [xy1], [xy1]);
+        check(s, pxy, [x1], [!pxy, x1]);
+        // check(s, T, [!pxy, xy1], [xy1]);
+        // check(s, T, [!px, !py, xy1], [xy1]);
+        // check(s, T, [!px, !py], [!px, !py]); // !pxy, would be correct as well
     }
 }
