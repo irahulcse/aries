@@ -123,6 +123,14 @@ impl CspProblem {
     pub fn end_id(id: &String) -> String {
         format!("{id}::end")
     }
+
+    fn is_valid(&self) -> bool {
+        let mut m = Model::new();
+
+        for (name, var) in self.variables.iter() {}
+
+        todo!()
+    }
 }
 
 impl Display for CspProblem {
