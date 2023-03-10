@@ -183,43 +183,41 @@ impl<Lbl: Label> Solver<Lbl> {
         let clause = clause.into();
         // only keep literals that may become true
         let clause: Vec<Lit> = clause.into_iter().filter(|&l| !self.model.entails(!l)).collect();
-        let propagatable = self.scoped_disjunction(clause, scope);
+        let (propagatable, scope) = self.scoped_disjunction(clause, scope);
         if propagatable.is_empty() {
-            return Err(InvalidUpdate(Lit::TRUE, Origin::Direct(DirectOrigin::Encoding)));
+            return self.model.state.set(!scope, Cause::Encoding).map(|_| ());
         }
-        self.reasoners.sat.add_clause(propagatable);
+        self.reasoners.sat.add_clause_scoped(propagatable, scope);
         Ok(())
     }
 
-    /// From a disjunction with optional elements, creates a clause taht can be safely unit propagated
-    pub(crate) fn scoped_disjunction(&self, disjuncts: impl Into<Disjunction>, scope: Lit) -> Disjunction {
+    /// From a disjunction with optional elements, creates a clause that can be safely unit propagated
+    pub(in crate::solver) fn scoped_disjunction(
+        &self,
+        disjuncts: impl Into<Disjunction>,
+        scope: Lit,
+    ) -> (Disjunction, Lit) {
         let prez = |l: Lit| self.model.presence_literal(l.variable());
         // let optional = |l: Lit| prez(l) == Lit::TRUE;
         let disjuncts = disjuncts.into();
         if scope == Lit::TRUE {
-            return disjuncts;
+            return (disjuncts, scope);
         }
         if disjuncts.is_empty() {
             // the disjunction can never be true and thus must be absent
-            return Disjunction::from([!scope]);
+            return (Disjunction::from([!scope]), Lit::TRUE);
         }
         if disjuncts
             .literals()
             .iter()
             .all(|&l| self.model.state.implies(prez(l), scope))
         {
-            return disjuncts;
+            return (disjuncts, scope);
         }
         let mut disjuncts = Vec::from(disjuncts);
         disjuncts.push(!scope);
 
-        // let optionals: Vec<Lit> = disjuncts.iter().copied().filter(|l| optional(*l)).collect();
-        // if optionals.is_empty() {
-        //     return disjuncts.into();
-        // }
-        // let non_optionals: Vec<Lit> = disjuncts.iter().copied().filter(|l| !optional(*l)).collect();
-
-        disjuncts.into()
+        (disjuncts.into(), Lit::TRUE)
     }
 
     /// Post all constraints of the model that have not been previously posted.
@@ -692,21 +690,27 @@ mod test {
 
         let s = &Solver::new(m);
 
-        fn check(s: &Solver, scope: Lit, clause: impl Into<Disjunction>, expected: impl Into<Disjunction>) {
+        fn check(
+            s: &Solver,
+            scope: Lit,
+            clause: impl Into<Disjunction>,
+            expected: impl Into<Disjunction>,
+            expected_scope: Lit,
+        ) {
             let clause = clause.into();
             let result = s.scoped_disjunction(clause, scope);
             let expected = expected.into();
-            assert_eq!(result, expected);
+            assert_eq!(result, (expected, expected_scope));
         }
 
-        check(s, px, [x1], [x1]);
+        check(s, px, [x1], [x1], px);
         // check(s, T, [!px, x1], [x1]);
-        check(s, px, [x1, x2], [x1, x2]);
+        check(s, px, [x1, x2], [x1, x2], px);
         // check(s, T, [!px, x1, x2], [x1, x2]);
-        check(s, px, [xy1], [xy1]);
-        check(s, py, [xy1], [xy1]);
-        check(s, pxy, [xy1], [xy1]);
-        check(s, pxy, [x1], [!pxy, x1]);
+        check(s, px, [xy1], [xy1], px); // ??
+        check(s, py, [xy1], [xy1], py);
+        check(s, pxy, [xy1], [xy1], pxy);
+        check(s, pxy, [x1], [!pxy, x1], T);
         // check(s, T, [!pxy, xy1], [xy1]);
         // check(s, T, [!px, !py, xy1], [xy1]);
         // check(s, T, [!px, !py], [!px, !py]); // !pxy, would be correct as well
