@@ -5,6 +5,10 @@
 use std::{collections::HashMap, fmt::Display};
 
 use anyhow::{bail, Result};
+use aries::core::INT_CST_MAX;
+use aries::model::lang::expr::{and, geq, lt, or};
+use aries::model::Model;
+use aries::solver::Solver;
 use malachite::Rational;
 
 /// Represents a variable in a CSP problem.
@@ -125,11 +129,44 @@ impl CspProblem {
     }
 
     fn is_valid(&self) -> bool {
-        let mut m = Model::new();
+        let mut m: Model<String> = Model::new();
 
-        for (name, var) in self.variables.iter() {}
+        let mut vars = HashMap::new();
 
-        todo!()
+        for (name, domain) in self.variables.iter() {
+            let domain: Vec<(i32, i32)> = Vec::new(); // plage possible pour cette variable
+            let var = m.new_ivar(0, INT_CST_MAX, name.clone());
+            vars.insert(name.clone(), var);
+
+            let mut options = Vec::new();
+            for (lb, ub) in domain {
+                let lb = m.reify(geq(var, lb));
+                let ub = m.reify(lt(var, ub));
+                let in_interval = m.reify(and([lb, ub]));
+                options.push(in_interval);
+            }
+            m.enforce(or(options), []);
+        }
+
+        let t = |x: &CspConstraintTerm| {
+            let var = vars[&x.id];
+            var + 4 // TODO: translate rational add
+        };
+
+        for c in &self.constraints {
+            match c {
+                CspConstraint::Lt(lhs, rhs) => m.enforce(lt(t(lhs), t(rhs)), []),
+                CspConstraint::Le(_, _) => {}
+                CspConstraint::Equals(_, _) => {}
+                CspConstraint::Not(_) => {}
+                CspConstraint::Or(_) => {}
+            }
+        }
+
+        let mut solver = Solver::new(m);
+        let result = solver.solve().expect("Solver interrupted (by whomm ???)");
+
+        result.is_some() // an assignment exists
     }
 }
 
