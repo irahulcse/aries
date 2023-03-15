@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use crate::Model;
 use aries::model::extensions::{AssignmentExt, SavedAssignment, Shaped};
-use aries::model::lang::SAtom;
+use aries::model::lang::Atom;
 
 use aries_planning::chronicles::{ChronicleInstance, ChronicleKind, ChronicleOrigin, FiniteProblem, SubTask};
 

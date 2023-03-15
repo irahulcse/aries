@@ -1,5 +1,6 @@
 use super::*;
 use aries::core::Lit;
+
 use aries::model::lang::linear::LinearSum;
 use aries::model::lang::Type;
 use std::fmt::Debug;
