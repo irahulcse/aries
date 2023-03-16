@@ -268,8 +268,12 @@ fn enforce_refinement(t: TaskRef, supporters: Vec<TaskRef>, model: &mut Model) {
         // if the supporter is present, the supported is as well
         assert!(model.state.implies(s.presence, t.presence));
 
-        model.enforce(eq(s.start, t.start), [s.presence]);
-        model.enforce(eq(s.end, t.end), [s.presence]);
+        //model.enforce(eq(s.start, t.start), [s.presence]);
+        //model.enforce(eq(s.end, t.end), [s.presence]);
+        // Relaxed constraints in the encoding for chronicles coming from an acting system,
+        // where the interval of a method is contained in the interval of the task it refines.
+        model.enforce(f_leq(t.start, s.start), [s.presence]);
+        model.enforce(f_leq(s.end, t.end), [s.presence]);
         assert_eq!(s.task.len(), t.task.len());
         for (a, b) in s.task.iter().zip(t.task.iter()) {
             model.enforce(eq(*a, *b), [s.presence])
