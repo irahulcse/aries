@@ -2,7 +2,7 @@
 use anyhow::{Context, Result};
 use aries::core::state::Domains;
 use aries::model::extensions::AssignmentExt;
-use aries::model::lang::{Atom, FAtom};
+use aries::model::lang::{Atom, FAtom, SAtom};
 use aries_planning::chronicles::{ChronicleInstance, ChronicleKind, FiniteProblem};
 use unified_planning as up;
 use unified_planning::Real;

@@ -251,7 +251,8 @@ impl<'a> Printer<'a> {
                 print!("or")
             }
             ConstraintType::Sum(sum) => {
-                print!("{} = ", sum.value);
+                self.iatom(sum.value);
+                print!(" = ");
                 for (i, term) in sum.sum.terms.iter().enumerate() {
                     if i != 0 {
                         print!("+");

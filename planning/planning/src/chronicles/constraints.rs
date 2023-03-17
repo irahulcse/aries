@@ -1,6 +1,5 @@
 use super::*;
 use aries::core::Lit;
-
 use aries::model::lang::linear::LinearSum;
 use aries::model::lang::Type;
 use std::fmt::Debug;
@@ -117,7 +116,7 @@ pub enum ConstraintType {
 #[derive(Clone, Debug)]
 pub struct Sum {
     pub sum: LinearSum,
-    pub value: IntCst,
+    pub value: IAtom,
 }
 
 impl Substitute for ConstraintType {
@@ -128,7 +127,7 @@ impl Substitute for ConstraintType {
                 lb: substitution.sub_linear_sum(lb),
                 ub: substitution.sub_linear_sum(ub),
             }),
-            InTable(_) | Lt | Eq | Neq | Or => self.clone(), // no variables in those variants
+            InTable(_) | Lt | Eq | Neq | Or | Sum(_) => self.clone(), // no variables in those variants
         }
     }
 }

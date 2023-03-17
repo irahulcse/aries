@@ -639,11 +639,14 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> anyhow::Result<(Mod
                 ConstraintType::Sum(sum) => {
                     //println!("debug linear: {:?} = {}", lsum, value);
 
-                    let value = sum.value;
+                    //let value = sum.value;
                     let sum = sum.sum.clone();
 
-                    model.enforce(lsum.clone().leq(value), []);
-                    model.enforce(lsum.geq(value), []);
+                    //model.enforce(sum.clone().leq(value), []);
+                    //model.enforce(sum.geq(value), []);
+
+                    model.enforce(sum.clone().leq(LinearSum::zero()), []);
+                    model.enforce(sum.geq(LinearSum::zero()), []);
                 }
             }
         }
