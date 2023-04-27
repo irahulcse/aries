@@ -6,14 +6,14 @@ use std::sync::Arc;
 
 pub struct Input {
     pub text: String,
-    pub source: Option<String>,
+    pub source_name: String,
 }
 
 impl Input {
     pub fn from_string(input: impl Into<String>) -> Input {
         Input {
             text: input.into(),
-            source: None,
+            source_name: "".to_string(),
         }
     }
 
@@ -21,34 +21,12 @@ impl Input {
         let s = std::fs::read_to_string(file)?;
         Ok(Input {
             text: s,
-            source: Some(file.display().to_string()),
+            source_name: file.display().to_string(),
         })
     }
 
     fn indices(&self, span: Span) -> Option<(usize, usize)> {
-        let mut start = None;
-        let mut end = None;
-        let mut line = 0;
-        let mut column = 0;
-        for (char, c) in self.text.chars().enumerate() {
-            let pos = Pos { line, column };
-            if pos == span.start {
-                start = Some(char);
-            }
-            if pos == span.end {
-                end = Some(char);
-            }
-
-            column += 1;
-            if c == '\n' {
-                line += 1;
-                column = 0;
-            }
-        }
-        match (start, end) {
-            (Some(start), Some(end)) => Some((start, end)),
-            _ => None,
-        }
+        Some((span.start.index as usize, span.end.index as usize))
     }
 
     /// Returns the substring corresponding to this span.
@@ -98,7 +76,7 @@ impl From<&str> for Input {
     fn from(s: &str) -> Self {
         Input {
             text: s.to_string(),
-            source: None,
+            source_name: s.to_string(),
         }
     }
 }
@@ -116,6 +94,7 @@ impl TryFrom<&std::path::Path> for Input {
 pub struct Pos {
     pub line: u32,
     pub column: u32,
+    pub index: u32,
 }
 
 /// Part of an input, denoted by the start and end position, both inclusive.
@@ -158,6 +137,7 @@ impl Loc {
             context: vec![],
             inline_err: Some(error.into()),
             loc: Some(self),
+            hints: Vec::new(),
         }
     }
 
@@ -187,11 +167,17 @@ pub struct ErrLoc {
     context: Vec<String>,
     inline_err: Option<String>,
     loc: Option<Loc>,
+    hints: Vec<(Loc, String)>,
 }
 
 impl ErrLoc {
     pub fn with_error(mut self, inline_message: impl Into<String>) -> ErrLoc {
         self.inline_err = Some(inline_message.into());
+        self
+    }
+
+    pub fn with_hint(mut self, loc: &Loc, msg: impl Display) -> ErrLoc {
+        self.hints.push((loc.clone(), format!("{msg}")));
         self
     }
 
@@ -205,6 +191,7 @@ impl From<String> for ErrLoc {
             context: vec![],
             inline_err: Some(e),
             loc: None,
+            hints: vec![],
         }
     }
 }
@@ -218,17 +205,60 @@ impl std::fmt::Display for ErrLoc {
             writeln!(f, "{prefix}: {context}")?;
         }
         if let Some(Loc { source, span }) = &self.loc {
-            if let Some(path) = &source.source {
-                writeln!(f, "{}:{}:{}", path, span.start.line + 1, span.start.column)?;
+            if !source.source_name.is_empty() {
+                writeln!(
+                    f,
+                    "{}:{}:{}",
+                    source.source_name,
+                    span.start.line + 1,
+                    span.start.column
+                )?;
             }
             write!(f, "{}", source.underlined(*span))?;
         }
         if let Some(err) = &self.inline_err {
             write!(f, " {err}")?;
         }
+
+        for (loc, msg) in &self.hints {
+            write!(f, "\n{}", loc.source.underlined(loc.span))?;
+            write!(f, " {}", msg)?;
+        }
         Ok(())
     }
 }
+
+// display implementation based on ariadne
+// impl std::fmt::Display for ErrLoc {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         let (source_id, source) = match &self.loc {
+//             Some(Loc { source, span }) => {
+//                 let id = source.source_name.clone();
+//                 (id, Source::from(&source.text))
+//             }
+//             None => ("".to_string(), Source::from("")),
+//         };
+//
+//         let mut builder: ReportBuilder<Loc> = ariadne::Report::build(ReportKind::Error, source_id.clone(), 0);
+//
+//         for (i, context) in self.context.iter().rev().enumerate() {
+//             let prefix = if i > 0 { "Caused by" } else { "Error" };
+//             builder = builder.with_note(format!("{prefix}: {context}"));
+//         }
+//         let msg = self.inline_err.as_deref().unwrap_or("");
+//         if let Some(loc) = &self.loc {
+//             builder = builder.with_label(ariadne::Label::new(loc.clone()).with_message(msg));
+//         } else {
+//             builder = builder.with_message(msg);
+//         }
+//         let report = builder.finish();
+//         let mut output = Vec::new();
+//         report.write((source_id, source), &mut output).unwrap();
+//         let output = std::str::from_utf8(&output).unwrap();
+//         write!(f, "{}", output)?;
+//         Ok(())
+//     }
+// }
 
 impl std::fmt::Debug for ErrLoc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -293,10 +323,15 @@ impl Sym {
             None => {
                 let input = Input::from_string(&self.canonical);
                 let span = Span {
-                    start: Pos { line: 0, column: 0 },
+                    start: Pos {
+                        line: 0,
+                        column: 0,
+                        index: 0,
+                    },
                     end: Pos {
                         line: 0,
                         column: (self.canonical.len() - 1) as u32,
+                        index: (self.canonical.len() - 1) as u32,
                     },
                 };
                 Loc {

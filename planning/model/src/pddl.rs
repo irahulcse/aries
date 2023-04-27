@@ -1,12 +1,17 @@
 #![allow(dead_code)] // TODO: remove once we exploit the code for HDDL
 
 use anyhow::Context;
+use std::collections::HashSet;
 use std::fmt::{Display, Error, Formatter};
 
-use crate::parsing::sexpr::*;
+use crate::fluents::{Fluent, Fluents, Param};
+use crate::sexpr::*;
+use crate::source::Annotable;
+use crate::types::{SymbolicType, Type, Types, UserType};
 use anyhow::Result;
 use aries::utils::disp_iter;
 use aries::utils::input::*;
+use itertools::Itertools;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -132,10 +137,11 @@ impl Display for PddlFeature {
 pub struct Domain {
     pub name: Sym,
     pub features: Vec<PddlFeature>,
-    pub types: Vec<TypedSymbol>,
+    pub types: Types,
     pub constants: Vec<TypedSymbol>,
-    pub predicates: Vec<Predicate>,
-    pub functions: Vec<Function>,
+    pub fluents: Fluents,
+    // pub predicates: Vec<Predicate>,
+    // pub functions: Vec<Function>,
     pub tasks: Vec<TaskDef>,
     pub methods: Vec<Method>,
     pub actions: Vec<Action>,
@@ -146,10 +152,8 @@ impl Display for Domain {
         write!(f, "# Domain : {}", self.name)?;
         write!(f, "\n# Types \n  ")?;
         disp_iter(f, self.types.as_slice(), "\n  ")?;
-        write!(f, "\n# Predicates \n  ")?;
-        disp_iter(f, self.predicates.as_slice(), "\n  ")?;
-        write!(f, "\n# Functions \n  ")?;
-        disp_iter(f, self.functions.as_slice(), "\n  ")?;
+        write!(f, "\n# Fluents \n  ")?;
+        write!(f, "{:?}", self.fluents.iter().format("\n  "))?;
         write!(f, "\n# Tasks \n  ")?;
         disp_iter(f, self.tasks.as_slice(), "\n  ")?;
         write!(f, "\n# Methods \n  ")?;
@@ -372,10 +376,9 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
     let mut res = Domain {
         name,
         features: vec![],
-        types: vec![],
+        types: Default::default(),
         constants: vec![],
-        predicates: vec![],
-        functions: vec![],
+        fluents: Default::default(),
         tasks: vec![],
         methods: vec![],
         actions: vec![],
@@ -404,7 +407,8 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
                     let mut pred = pred.as_list_iter().ok_or_else(|| pred.invalid("Expected a list"))?;
                     let name = pred.pop_atom()?.clone();
                     let args = consume_typed_symbols(&mut pred)?;
-                    res.predicates.push(Predicate { name, args });
+                    let pred = build_predicate(name, args, pred.loc(), &res)?;
+                    res.fluents.add_fluent(pred)?;
                 }
             }
             ":types" => {
@@ -412,7 +416,7 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
                     return Err(current.invalid("More than one ':types' section definition"));
                 }
                 let types = consume_typed_symbols(&mut property)?;
-                res.types = types;
+                res.types = build_types(types)?;
             }
             ":constants" => {
                 if !res.constants.is_empty() {
@@ -422,12 +426,13 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
                 res.constants = constants;
             }
             ":functions" => {
-                for func in property {
-                    let mut func = func.as_list_iter().ok_or_else(|| func.invalid("Expected a list"))?;
-                    let name = func.pop_atom()?.clone();
-                    let args = consume_typed_symbols(&mut func)?;
-                    res.functions.push(Function { name, args });
-                }
+                todo!();
+                // for func in property {
+                //     let mut func = func.as_list_iter().ok_or_else(|| func.invalid("Expected a list"))?;
+                //     let name = func.pop_atom()?.clone();
+                //     let args = consume_typed_symbols(&mut func)?;
+                //     res.functions.push(Function { name, args });
+                // }
             }
             ":action" => {
                 let name = property.pop_atom()?.clone();
@@ -552,6 +557,81 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
         }
     }
     Ok(res)
+}
+
+fn build_types(mut types: Vec<TypedSymbol>) -> R<Types> {
+    let declared_types: HashSet<_> = types.iter().map(|ts| &ts.symbol).collect();
+    let implicitly_declared_types: HashSet<_> = types
+        .iter()
+        .filter_map(|ts| ts.tpe.as_ref())
+        .filter(|tpe| !declared_types.contains(tpe))
+        .collect();
+
+    let mut out = Types::default();
+    for sym in implicitly_declared_types {
+        let user_type = UserType::new(sym.clone());
+        out.add_user_type(user_type);
+    }
+
+    while !types.is_empty() {
+        let next = types.iter().enumerate().find(|(_, tpe)| {
+            if let Some(parent) = &tpe.tpe {
+                out.has_type(&parent)
+            } else {
+                true
+            }
+        });
+        if let Some((i, decl)) = next {
+            if out.has_type(&decl.symbol) {
+                return decl.symbol.invalid("Type already declared").failed();
+            }
+            let parent = match &decl.tpe {
+                Some(parent) => SymbolicType::User(out.get_type(parent).unwrap().clone()),
+                None => SymbolicType::Any,
+            };
+            out.add_user_type(UserType::new_with_parent(&decl.symbol, parent));
+            types.remove(i);
+        } else {
+            return types[0]
+                .symbol
+                .invalid("Missing parent of type (often indicative of circular dependency)")
+                .failed();
+        }
+    }
+    Ok(out)
+}
+
+fn build_type(opt_type: Option<Sym>, domain: &Domain) -> R<Type> {
+    let tpe = match opt_type {
+        Some(tpe) => {
+            let user_type = domain.types.get_type(&tpe).ok_or_else(|| tpe.invalid("Unknown type"))?;
+            SymbolicType::User(user_type)
+        }
+        None => SymbolicType::Any,
+    };
+    Ok(Type::Symbolic(tpe))
+}
+
+fn build_param(ts: TypedSymbol, domain: &Domain) -> R<Param> {
+    let tpe = build_type(ts.tpe, domain)?;
+    Ok(Param::new(ts.symbol, tpe))
+}
+
+fn build_param_list(params: Vec<TypedSymbol>, domain: &Domain) -> R<Vec<Param>> {
+    let mut out: Vec<Param> = Vec::with_capacity(params.len());
+    for param in params {
+        if let Some(_previous) = out.iter().find(|p| p.name == param.symbol) {
+            return param.symbol.invalid("Already a parameter with this name").failed();
+        }
+        out.push(build_param(param, domain)?);
+    }
+
+    Ok(out)
+}
+
+fn build_predicate(name: SAtom, params: Vec<TypedSymbol>, source: Loc, domain: &Domain) -> R<Fluent> {
+    let params = build_param_list(params, domain)?;
+    Ok(Fluent::new(name, params, Type::Bool.annotate(), source))
 }
 
 fn parse_task_network(mut key_values: ListIter) -> R<TaskNetwork> {
@@ -775,6 +855,7 @@ fn read_problem(problem: SExpr) -> std::result::Result<Problem, ErrLoc> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::{anyhow, bail};
     use std::path::PathBuf;
 
     #[test]
@@ -786,6 +867,30 @@ mod tests {
         }
 
         Result::Ok(())
+    }
+
+    #[test]
+    fn test_parse_types() -> Result<()> {
+        let valid = vec!["(a b c)", "(a b - c)"];
+        for input in valid {
+            let out = build_types(typed_syms(input)).unwrap();
+            println!("valid: {input}:\n  {:?}", out);
+        }
+
+        let invalid = vec!["(aaaa b aaaa)", "(a b - a)", "(a - b b - a)", "(a - b a - c)"];
+        for input in invalid {
+            match build_types(typed_syms(input)) {
+                Err(out) => println!("invalid: {input}:\n{:?}\n", out),
+                Ok(out) => anyhow::bail!("Unexpected success: {input}:\n  {:?}\n", out),
+            }
+        }
+        Ok(())
+    }
+
+    fn typed_syms(input: &str) -> Vec<TypedSymbol> {
+        let expr = parse(input).unwrap();
+        let mut iter = expr.as_list_iter().unwrap();
+        consume_typed_symbols(&mut iter).unwrap()
     }
 
     #[test]

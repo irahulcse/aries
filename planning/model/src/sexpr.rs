@@ -275,6 +275,7 @@ fn tokenize(source: std::sync::Arc<Input>) -> Vec<Token> {
         let start_pos = Pos {
             line: line as u32,
             column: (start - line_start) as u32,
+            index: start as u32,
         };
         Token::Sym { start, end, start_pos }
     };
@@ -314,6 +315,7 @@ fn tokenize(source: std::sync::Arc<Input>) -> Vec<Token> {
                     let pos = Pos {
                         line: line as u32,
                         column: (index - line_start) as u32,
+                        index: index as u32,
                     };
                     if n == '(' {
                         tokens.push(Token::LParen(pos));
@@ -348,6 +350,7 @@ fn read(tokens: &mut std::iter::Peekable<core::slice::Iter<Token>>, src: &std::s
                 end: Pos {
                     line: start_pos.line,
                     column: start_pos.column + (canonical.len() as u32) - 1,
+                    index: *end as u32,
                 },
             };
             let loc = Loc::new(src, span);
