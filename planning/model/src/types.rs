@@ -1,6 +1,5 @@
-use crate::source::*;
-use aries::utils::input::Sym;
-use std::collections::HashMap;
+use aries::utils::input::{ErrLoc, Sym};
+use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 use std::sync::Arc;
 
@@ -105,5 +104,56 @@ impl Types {
 
     pub fn has_type(&self, name: &Sym) -> bool {
         self.get_type(name).is_some()
+    }
+}
+
+#[derive(Clone)]
+pub struct Instance {
+    pub name: Sym,
+    pub tpe: SymbolicType,
+}
+
+impl Instance {
+    pub fn new(name: impl Into<Sym>, tpe: SymbolicType) -> Self {
+        Self { name: name.into(), tpe }
+    }
+}
+impl Display for Instance {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+impl Debug for Instance {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.name, self.tpe)
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Instances {
+    instances: Vec<Instance>,
+}
+
+impl Instances {
+    pub fn get(&self, name: impl Borrow<str>) -> Option<&Instance> {
+        let name: &str = name.borrow();
+        self.instances.iter().find(|i| i.name.canonical_str() == name)
+    }
+
+    pub fn add_instance(&mut self, instance: Instance) -> Result<(), ErrLoc> {
+        if let Some(prev) = self.get(&instance.name) {
+            return instance
+                .name
+                .invalid("Instance already defined.")
+                .with_hint(&prev.name.loc(), "Previous definition")
+                .failed();
+        }
+        self.instances.push(instance);
+        Ok(())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.instances.is_empty()
     }
 }

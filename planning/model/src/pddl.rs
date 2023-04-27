@@ -7,7 +7,7 @@ use std::fmt::{Display, Error, Formatter};
 use crate::fluents::{Fluent, Fluents, Param};
 use crate::sexpr::*;
 use crate::source::Annotable;
-use crate::types::{SymbolicType, Type, Types, UserType};
+use crate::types::{Instance, Instances, SymbolicType, Type, Types, UserType};
 use anyhow::Result;
 use aries::utils::disp_iter;
 use aries::utils::input::*;
@@ -138,7 +138,7 @@ pub struct Domain {
     pub name: Sym,
     pub features: Vec<PddlFeature>,
     pub types: Types,
-    pub constants: Vec<TypedSymbol>,
+    pub instances: Instances,
     pub fluents: Fluents,
     // pub predicates: Vec<Predicate>,
     // pub functions: Vec<Function>,
@@ -377,7 +377,7 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
         name,
         features: vec![],
         types: Default::default(),
-        constants: vec![],
+        instances: Default::default(),
         fluents: Default::default(),
         tasks: vec![],
         methods: vec![],
@@ -411,6 +411,14 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
                     res.fluents.add_fluent(pred)?;
                 }
             }
+            // ":functions" => {
+            //     for func in property {
+            //         let mut func = func.as_list_iter().ok_or_else(|| func.invalid("Expected a list"))?;
+            //         let name = func.pop_atom()?.clone();
+            //         let args = consume_typed_symbols(&mut func)?;
+            //         res.functions.push(Function { name, args });
+            //     }
+            // }
             ":types" => {
                 if !res.types.is_empty() {
                     return Err(current.invalid("More than one ':types' section definition"));
@@ -419,21 +427,17 @@ fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> {
                 res.types = build_types(types)?;
             }
             ":constants" => {
-                if !res.constants.is_empty() {
+                if !res.instances.is_empty() {
                     return Err(current.invalid("More than one ':constants' section definition"));
                 }
                 let constants = consume_typed_symbols(&mut property)?;
-                res.constants = constants;
+                for ts in constants {
+                    let name = ts.symbol;
+                    let tpe = get_type(ts.tpe, &res)?;
+                    res.instances.add_instance(Instance::new(name, tpe))?;
+                }
             }
-            ":functions" => {
-                todo!();
-                // for func in property {
-                //     let mut func = func.as_list_iter().ok_or_else(|| func.invalid("Expected a list"))?;
-                //     let name = func.pop_atom()?.clone();
-                //     let args = consume_typed_symbols(&mut func)?;
-                //     res.functions.push(Function { name, args });
-                // }
-            }
+
             ":action" => {
                 let name = property.pop_atom()?.clone();
                 let mut args = Vec::new();
@@ -601,20 +605,19 @@ fn build_types(mut types: Vec<TypedSymbol>) -> R<Types> {
     Ok(out)
 }
 
-fn build_type(opt_type: Option<Sym>, domain: &Domain) -> R<Type> {
-    let tpe = match opt_type {
+fn get_type(opt_type: Option<Sym>, domain: &Domain) -> R<SymbolicType> {
+    Ok(match opt_type {
         Some(tpe) => {
             let user_type = domain.types.get_type(&tpe).ok_or_else(|| tpe.invalid("Unknown type"))?;
             SymbolicType::User(user_type)
         }
         None => SymbolicType::Any,
-    };
-    Ok(Type::Symbolic(tpe))
+    })
 }
 
 fn build_param(ts: TypedSymbol, domain: &Domain) -> R<Param> {
-    let tpe = build_type(ts.tpe, domain)?;
-    Ok(Param::new(ts.symbol, tpe))
+    let tpe = get_type(ts.tpe, domain)?;
+    Ok(Param::new(ts.symbol, Type::Symbolic(tpe)))
 }
 
 fn build_param_list(params: Vec<TypedSymbol>, domain: &Domain) -> R<Vec<Param>> {
@@ -630,6 +633,11 @@ fn build_param_list(params: Vec<TypedSymbol>, domain: &Domain) -> R<Vec<Param>> 
 }
 
 fn build_predicate(name: SAtom, params: Vec<TypedSymbol>, source: Loc, domain: &Domain) -> R<Fluent> {
+    let params = build_param_list(params, domain)?;
+    Ok(Fluent::new(name, params, Type::Bool.annotate(), source))
+}
+
+fn build_function(name: SAtom, params: Vec<TypedSymbol>, source: Loc, domain: &Domain) -> R<Fluent> {
     let params = build_param_list(params, domain)?;
     Ok(Fluent::new(name, params, Type::Bool.annotate(), source))
 }

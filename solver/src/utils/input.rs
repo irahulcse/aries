@@ -378,6 +378,11 @@ impl std::borrow::Borrow<str> for Sym {
         &self.canonical
     }
 }
+impl std::borrow::Borrow<str> for &Sym {
+    fn borrow(&self) -> &str {
+        &self.canonical
+    }
+}
 impl std::borrow::Borrow<String> for Sym {
     fn borrow(&self) -> &String {
         &self.canonical
