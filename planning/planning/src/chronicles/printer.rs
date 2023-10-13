@@ -7,6 +7,7 @@ use aries::model::lang::linear::{LinearSum, LinearTerm};
 use aries::model::lang::{Atom, BVar, IAtom, IVar, SAtom};
 use aries::model::symbols::SymId;
 use aries::model::Model;
+use itertools::Itertools;
 
 pub struct Printer<'a> {
     model: &'a Model<VarLabel>,
@@ -26,6 +27,53 @@ impl<'a> Printer<'a> {
     pub fn print_chronicle(ch: &Chronicle, model: &Model<VarLabel>) {
         let printer = Printer { model };
         printer.chronicle(ch)
+    }
+
+    pub fn print_constraints(constraints: &[aries::model::Constraint], model: &Model<VarLabel>) {
+        let printer = Printer { model };
+        let constraints = constraints.iter().unique();
+
+        println!("reified constraints");
+        for (i, c) in constraints.enumerate() {
+            print!("- {}: ", i);
+            printer.print_constraint(c)
+        }
+    }
+
+    pub fn print_constraint(&self, constraint: &aries::model::Constraint) {
+        let aries::model::Constraint::Reified(r, l) = constraint;
+        self.lit(*l);
+        print!(" <=> ");
+        match r {
+            aries::reif::ReifExpr::Lit(l) => self.lit(*l),
+            aries::reif::ReifExpr::MaxDiff(md) => {
+                self.var(md.b);
+                print!("-");
+                self.var(md.a);
+                print!("<= {}", md.ub);
+            }
+            aries::reif::ReifExpr::Or(or) => {
+                print!("or(");
+                self.list(or);
+                print!(")");
+            }
+            aries::reif::ReifExpr::And(and) => {
+                print!("and(");
+                self.list(and);
+                print!(")");
+            }
+            aries::reif::ReifExpr::Linear(l) => {
+                for e in &l.sum {
+                    print!("+({})*", e.factor);
+                    self.var(e.var);
+                    print!("[");
+                    self.lit(e.lit);
+                    print!("]");
+                }
+                print!("<= {:?}", l.upper_bound)
+            }
+        }
+        println!();
     }
 
     fn chronicle(&self, ch: &Chronicle) {
@@ -261,7 +309,7 @@ impl<'a> Printer<'a> {
                 print!("<")
             }
             ConstraintType::Leq => {
-                print!("<")
+                print!("<=")
             }
             ConstraintType::Eq => {
                 print!("=")

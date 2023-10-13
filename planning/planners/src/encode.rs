@@ -13,6 +13,7 @@ use aries::model::lang::{expr::*, Kind, Type};
 use aries::model::lang::{Atom, FAtom, FVar, IAtom, Variable};
 use aries::solver::Solver;
 use aries_planning::chronicles::constraints::{ConstraintType, Duration};
+use aries_planning::chronicles::printer::Printer;
 use aries_planning::chronicles::*;
 use env_param::EnvParam;
 use std::collections::{HashMap, HashSet};
@@ -564,6 +565,8 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
     // for each condition, make sure the end is after the start
     for &(_, prez_cond, cond) in &conds {
         solver.enforce(f_leq(cond.start, cond.end), [prez_cond]);
+        //let model = &solver.model;
+        //Printer::print_constraints(&solver.model.shape.constraints, &model)
     }
 
     solver.propagate()?;
@@ -619,26 +622,29 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
                         },
                         x => panic!("Invalid variable pattern for LT constraint: {:?}", x),
                     },
-                    ConstraintType::Leq => match constraint.variables.as_slice() {
-                        &[a, b] => match (a, b) {
-                            (Atom::Int(a), Atom::Int(b)) => solver.model.bind(leq(a, b), value),
-                            (Atom::Fixed(a), Atom::Fixed(b)) if a.denom == b.denom => {
-                                solver.model.bind(f_leq(a, b), value)
-                            }
-                            (Atom::Fixed(a), Atom::Int(b)) => {
-                                let a = LinearSum::from(a);
-                                let b = LinearSum::from(b);
-                                solver.model.bind(a.leq(b), value);
-                            }
-                            (Atom::Int(a), Atom::Fixed(b)) => {
-                                let a = LinearSum::from(a);
-                                let b = LinearSum::from(b);
-                                solver.model.bind(a.leq(b), value);
-                            }
-                            _ => panic!("Invalid LEQ operands: {a:?}  {b:?}"),
-                        },
-                        x => panic!("Invalid variable pattern for LEQ constraint: {:?}", x),
-                    },
+                    ConstraintType::Leq => {
+                        match constraint.variables.as_slice() {
+                            &[a, b] => match (a, b) {
+                                (Atom::Int(a), Atom::Int(b)) => solver.model.bind(leq(a, b), value),
+                                (Atom::Fixed(a), Atom::Fixed(b)) if a.denom == b.denom => {
+                                    solver.model.bind(f_leq(a, b), value)
+                                }
+                                (Atom::Fixed(a), Atom::Int(b)) => {
+                                    let a = LinearSum::from(a);
+                                    let b = LinearSum::from(b);
+                                    solver.model.bind(a.leq(b), value);
+                                }
+                                (Atom::Int(a), Atom::Fixed(b)) => {
+                                    let a = LinearSum::from(a);
+                                    let b = LinearSum::from(b);
+                                    solver.model.bind(a.leq(b), value);
+                                }
+                                _ => panic!("Invalid LEQ operands: {a:?}  {b:?}"),
+                            },
+                            x => panic!("Invalid variable pattern for LEQ constraint: {:?}", x),
+                        }
+                        //Printer::print_constraints(&solver.model.shape.constraints, &solver.model);
+                    }
                     ConstraintType::Eq => {
                         assert_eq!(
                             constraint.variables.len(),
@@ -847,7 +853,9 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
                 if !unifiable_sv(&solver.model, &cond.state_var, &eff.state_var) {
                     continue;
                 }
-                let EffectOp::Assign(effect_value) = eff.operation else { unreachable!() };
+                let EffectOp::Assign(effect_value) = eff.operation else {
+                    unreachable!()
+                };
                 if !solver.model.unifiable(cond.value, effect_value) {
                     continue;
                 }
@@ -988,8 +996,12 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
 
         // Force the new assigned values to be in the state variable domain.
         for &&(_, prez, eff) in &assignments {
-            let Type::Int { lb, ub } = eff.state_var.fluent.return_type() else { unreachable!() };
-            let EffectOp::Assign(val) = eff.operation else { unreachable!() };
+            let Type::Int { lb, ub } = eff.state_var.fluent.return_type() else {
+                unreachable!()
+            };
+            let EffectOp::Assign(val) = eff.operation else {
+                unreachable!()
+            };
             let val: IAtom = val.try_into().expect("Not integer assignment to an int state variable");
             solver.enforce(geq(val, lb), [prez]);
             solver.enforce(leq(val, ub), [prez]);
@@ -1003,6 +1015,7 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
                 "Only instantaneous effects are supported"
             );
             // Get the bounds of the state variable.
+
             let (lb, ub) = if let Type::Int { lb, ub } = eff.state_var.fluent.return_type() {
                 (lb, ub)
             } else {
@@ -1122,7 +1135,9 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
                                 .implies(prez_cond, solver.model.presence_literal(li_lit.variable())));
 
                             // Get the `ci_j*` value.
-                            let EffectOp::Increase(eff_val) = eff.operation else { unreachable!() };
+                            let EffectOp::Increase(eff_val) = eff.operation else {
+                                unreachable!()
+                            };
                             let ci: IAtom = eff_val.into();
                             (li_lit, ci)
                         })
@@ -1141,6 +1156,7 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
                 let cond_val =
                     IAtom::try_from(cond.value).expect("Condition value is not numeric for a numeric fluent");
                 sum -= LinearSum::with_lit(cond_val, la);
+                sum.simplify();
                 // Force the sum to be equals to 0.
                 solver.enforce(sum.clone().geq(0), [prez_cond]);
                 solver.enforce(sum.leq(0), [prez_cond]);
@@ -1149,12 +1165,32 @@ pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result
         }
         tracing::debug!(%num_resource_constraints);
 
-        solver.propagate()?;
+        //solver.propagate()?;
+
+        let model = &solver.model;
+
+        Printer::print_constraints(&solver.get_shape().constraints, model);
+
+        println!("before propagation:");
+        solver.model.print_state();
+
+        match solver.propagate() {
+            Ok(_) => {
+                println!("after propagation:");
+                solver.model.print_state();
+            }
+            Err(_) => {
+                println!("after propagation:");
+                solver.model.print_state();
+                //std::process::exit(0)
+            }
+        };
     }
 
     let metric = metric.map(|metric| add_metric(pb, &mut solver.model, metric));
 
     tracing::debug!("Done.");
+    //std::process::exit(0);
     Ok(EncodedProblem {
         model: solver.model,
         objective: metric,
@@ -1229,7 +1265,9 @@ fn create_la_vector_without_timepoints(
                 .implies(prez_cond, solver.model.presence_literal(la_lit.variable())));
 
             // Get the `ca_j` variable.
-            let EffectOp::Assign(eff_val) = eff.operation else { unreachable!() };
+            let EffectOp::Assign(eff_val) = eff.operation else {
+                unreachable!()
+            };
             let ca = IAtom::try_from(eff_val).expect("Try to assign a non-numeric value to a numeric fluent");
 
             // Get the persistence timepoint of the effect `e_j`.
@@ -1279,7 +1317,9 @@ fn create_la_vector_with_timepoints(
                 .implies(prez_cond, solver.model.presence_literal(la_lit.variable())));
 
             // Get the `ca_j` variable.
-            let EffectOp::Assign(eff_val) = eff.operation else { unreachable!() };
+            let EffectOp::Assign(eff_val) = eff.operation else {
+                unreachable!()
+            };
             let ca = IAtom::try_from(eff_val).expect("Try to assign a non-numeric value to a numeric fluent");
 
             // Get the persistence timepoint of the effect `e_j`.
