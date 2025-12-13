@@ -18,3 +18,23 @@ Decomposition,fn enforce_refinement(t: TaskRef, supporters: Vec<TaskRef>, model:
 Decomposition,pub fn add_metric(pb: &FiniteProblem, model: &mut Model, metric: Metric) -> IAtom 
 Decomposition,fn unifiable_sv(model: &Model, sv1: &StateVar, sv2: &StateVar) -> bool 
 Decomposition,pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result<EncodedProblem, Conflict> 
+Decomposition,pub fn populate_with_template_instances<F: Fn(&ChronicleTemplate) -> Option<u32>>(
+Decomposition,pub fn instantiate(
+Decomposition,fn from(value: &Subtask) -> Self 
+Decomposition,fn shared_scope(&self) -> Lit 
+Decomposition,pub fn populate_with_task_network(pb: &mut FiniteProblem, spec: &Problem, max_depth: u32) -> Result<()> 
+Decomposition,fn add_decomposition_constraints(pb: &FiniteProblem, model: &mut Model, encoding: &mut Encoding) 
+Decomposition,fn enforce_refinement(t: TaskRef, supporters: Vec<TaskRef>, model: &mut Model) 
+Decomposition,pub fn add_metric(pb: &FiniteProblem, model: &mut Model, metric: Metric) -> IAtom 
+Decomposition,fn unifiable_sv(model: &Model, sv1: &StateVar, sv2: &StateVar) -> bool 
+Decomposition,pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result<EncodedProblem, Conflict> 
+Decomposition,pub fn populate_with_template_instances<F: Fn(&ChronicleTemplate) -> Option<u32>>(
+Decomposition,pub fn instantiate(
+Decomposition,fn from(value: &Subtask) -> Self 
+Decomposition,fn shared_scope(&self) -> Lit 
+Decomposition,pub fn populate_with_task_network(pb: &mut FiniteProblem, spec: &Problem, max_depth: u32) -> Result<()> 
+Decomposition,fn add_decomposition_constraints(pb: &FiniteProblem, model: &mut Model, encoding: &mut Encoding) 
+Decomposition,fn enforce_refinement(t: TaskRef, supporters: Vec<TaskRef>, model: &mut Model) 
+Decomposition,pub fn add_metric(pb: &FiniteProblem, model: &mut Model, metric: Metric) -> IAtom 
+Decomposition,fn unifiable_sv(model: &Model, sv1: &StateVar, sv2: &StateVar) -> bool 
+Decomposition,pub fn encode(pb: &FiniteProblem, metric: Option<Metric>) -> std::result::Result<EncodedProblem, Conflict> 
