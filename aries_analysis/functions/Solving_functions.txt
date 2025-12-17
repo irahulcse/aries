@@ -7032,3 +7032,1896 @@ Solving,pub fn num_saved(&self) -> u32
 Solving,pub fn current_decision_level(&self) -> DecLvl 
 Solving,pub fn restore_last_with(&mut self, mut f: impl FnMut(Event)) 
 Solving,pub fn restore(&mut self, saved_state: u32, mut f: impl FnMut(Event)) 
+Solving,fn decompose(self, model: &mut Model<Lbl>) -> ReifExpr;
+Solving,fn decompose(self, _: &mut Model<Lbl>) -> ReifExpr 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn scope(&self, presence: impl Fn(VarRef) -> Lit) -> ValidityScope 
+Solving,pub fn negatable(&self) -> bool 
+Solving,pub fn eval(&self, assignment: &Domains) -> Option<bool> 
+Solving,fn from(value: bool) -> Self 
+Solving,fn from(value: Lit) -> Self 
+Solving,fn from(value: Disjunction) -> Self 
+Solving,fn not(self) -> Self::Output 
+Solving,pub fn new(b: VarRef, a: VarRef, ub: IntCst) -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn not(self) -> Self::Output 
+Solving,fn test_reif_expr_size() 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(model: Model<Lbl>) -> Solver<Lbl> 
+Solving,pub fn set_brancher(&mut self, brancher: impl SearchControl<Lbl> + 'static + Send) 
+Solving,pub fn set_brancher_boxed(&mut self, brancher: Box<dyn SearchControl<Lbl> + 'static + Send>) 
+Solving,pub fn input_stream(&self) -> InputStream 
+Solving,pub fn set_solver_output(&mut self, output: Sender<SolverOutput>) 
+Solving,pub fn enforce<Expr: Reifiable<Lbl>>(&mut self, bool_expr: Expr, scope: impl IntoIterator<Item = Lit>) 
+Solving,pub fn enforce_all<Expr: Reifiable<Lbl>>(
+Solving,pub fn reify<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Lit 
+Solving,pub fn half_reify<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Lit 
+Solving,fn post_constraint(&mut self, constraint: &Constraint) -> Result<(), InvalidUpdate> 
+Solving,fn add_clause(&mut self, clause: impl Into<Disjunction>, scope: Lit) -> Result<(), InvalidUpdate> 
+Solving,fn all_constraints_posted(&self) -> bool 
+Solving,fn post_constraints(&mut self) -> Result<(), InvalidUpdate> 
+Solving,pub fn solve(&mut self) -> Result<Option<Arc<SavedAssignment>>, Exit> 
+Solving,pub fn enumerate(&mut self, variables: &[VarRef]) -> Result<Vec<Vec<IntCst>>, Exit> 
+Solving,pub fn enumerate_with(
+Solving,pub fn incremental_push(&mut self, assumption: Lit) -> Result<bool, UnsatCore> 
+Solving,pub fn incremental_push_all(&mut self, assumptions: Vec<Lit>) -> Result<(), (Vec<Lit>, UnsatCore)> 
+Solving,pub fn incremental_pop(&mut self) 
+Solving,pub fn incremental_solve(&mut self) -> Result<Result<Arc<SavedAssignment>, UnsatCore>, Exit> 
+Solving,pub fn solve_with_assumptions(
+Solving,pub fn mus_and_mcs_enumerator(&mut self, assumptions: &[Lit]) -> MusMcsEnumerator<'_, Lbl> 
+Solving,fn search(&mut self) -> Result<SearchResult, Exit> 
+Solving,pub fn minimize(&mut self, objective: impl Into<IAtom>) -> Result<Option<(IntCst, Arc<SavedAssignment>)>, Exit> 
+Solving,pub fn minimize_with_callback(
+Solving,pub fn minimize_with_optional_initial_solution(
+Solving,pub fn minimize_with_initial_solution(
+Solving,pub fn maximize(&mut self, objective: impl Into<IAtom>) -> Result<Option<(IntCst, Arc<SavedAssignment>)>, Exit> 
+Solving,pub fn maximize_with_callback(
+Solving,pub fn maximize_with_optional_initial_solution(
+Solving,pub fn maximize_with_initial_solution(
+Solving,fn optimize_with(
+Solving,pub fn decide(&mut self, decision: Lit) 
+Solving,pub fn assume(&mut self, assumption: Lit) -> Result<bool, UnsatCore> 
+Solving,pub fn assume_and_propagate(&mut self, assumption: Lit) -> Result<bool, UnsatCore> 
+Solving,fn backtrack_level_for_clause(&self, clause: &[Lit]) -> Option<DecLvl> 
+Solving,fn add_conflicting_clause_and_backtrack(&mut self, expl: &Conflict) -> bool 
+Solving,pub fn propagate_and_backtrack_to_consistent(&mut self) -> Result<(), Conflict> 
+Solving,fn lbd(&self, clause: &Conflict, model: &Domains) -> u32 
+Solving,pub fn propagate(&mut self) -> Result<(), Conflict> 
+Solving,pub fn print_stats(&self) 
+Solving,pub fn reset_search(&mut self) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn restore(&mut self, saved_id: DecLvl) 
+Solving,fn clone(&self) -> Self 
+Solving,fn get_shape(&self) -> &ModelShape<Lbl> 
+Solving,fn test_scoped_disjunction() 
+Solving,fn check(
+Solving,pub fn new(literals_out: impl IntoIterator<Item = Lit>, map_solver_mode: MapSolverMode) -> Self 
+Solving,fn trin(&self, lit: Lit) -> Lit 
+Solving,fn trout(&self, lit: Lit) -> Lit 
+Solving,pub fn known_singleton_mcses(&self) -> &BTreeSet<Lit> 
+Solving,pub fn known_implications(&mut self, assumptions: &BTreeSet<Lit>) -> BTreeSet<Lit> 
+Solving,pub fn seed_is_unexplored(&mut self, seed: &BTreeSet<Lit>) -> bool 
+Solving,pub fn find_unexplored_seed(&mut self) -> Result<Option<BTreeSet<Lit>>, Exit> 
+Solving,pub fn block_down(&mut self, mcs: &BTreeSet<Lit>) 
+Solving,pub fn block_up(&mut self, mus: &BTreeSet<Lit>) 
+Solving,fn next(&mut self) -> Option<Self::Item> 
+Solving,pub fn with(
+Solving,pub fn mus_only(self) -> impl Iterator<Item = Mus> + use<'a, Lbl> 
+Solving,pub fn first_mus(self) -> Option<Mus> 
+Solving,fn _next(&mut self) -> Result<Option<MusMcs>, Exit> 
+Solving,fn check_subset(&mut self, subset: &BTreeSet<Lit>) -> Result<Result<BTreeSet<Lit>, BTreeSet<Lit>>, Exit> 
+Solving,fn grow(&mut self, sat_subset: &BTreeSet<Lit>) -> Result<(BTreeSet<Lit>, BTreeSet<Lit>), Exit> 
+Solving,fn shrink(&mut self, unsat_subset: &BTreeSet<Lit>) -> Result<BTreeSet<Lit>, Exit> 
+Solving,fn grow_optional_optimisation_lits_to_skip(&mut self, current: &BTreeSet<Lit>, skip: &mut BTreeSet<Lit>) 
+Solving,fn shrink_optional_optimisation_lits_to_skip(&mut self, current: &BTreeSet<Lit>, skip: &mut BTreeSet<Lit>) 
+Solving,fn debug_check_mcs_is_new_and_correct(&mut self, _mcs: &BTreeSet<Lit>) 
+Solving,fn debug_check_mus_is_new_and_correct(&mut self, _mus: &BTreeSet<Lit>) 
+Solving,fn debug_check_mcs_is_new_and_correct(&mut self, mcs: &BTreeSet<Lit>) 
+Solving,fn debug_check_mus_is_new_and_correct(&mut self, mus: &BTreeSet<Lit>) 
+Solving,fn test_simple_marco_simple() 
+Solving,pub fn default_brancher<Lbl: Label>() -> Brancher<Lbl> 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<Lbl>) -> Option<Decision>;
+Solving,fn import_vars(&mut self, model: &Model<Lbl>) 
+Solving,fn new_assignment_found(&mut self, objective_value: IntCst, assignment: std::sync::Arc<SavedAssignment>) 
+Solving,fn pre_save_state(&mut self, _model: &Model<Lbl>) 
+Solving,fn pre_conflict_analysis(&mut self, _model: &Model<Lbl>) 
+Solving,fn conflict(
+Solving,fn clone_to_box(&self) -> Brancher<Lbl>;
+Solving,fn get_next_thread_id() -> ThreadID 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new() -> Self 
+Solving,pub fn set_output(&mut self, out: Sender<SolverOutput>) 
+Solving,pub fn input_stream(&self) -> InputStream 
+Solving,pub fn notify_learnt(&self, clause: &Disjunction) 
+Solving,pub fn notify_solution_found(&self, assignment: Arc<SavedAssignment>) 
+Solving,fn clone(&self) -> Self 
+Solving,fn default() -> Self 
+Solving,pub fn map<Out>(self, f: impl FnOnce(Sol) -> Out) -> SolverResult<Out> 
+Solving,pub fn extract(&mut self) -> Option<Box<Solver<Lbl>>> 
+Solving,pub fn interrupt(&mut self) 
+Solving,pub fn new(mut base_solver: Box<Solver<Lbl>>, num_workers: usize, adapt: impl Fn(usize, &mut Solver<Lbl>)) -> Self 
+Solving,fn plug_solvers_output(&mut self) -> Receiver<SolverOutput> 
+Solving,pub fn incremental_push_all(&mut self, assumptions: Vec<Lit>) -> Result<(), UnsatCore> 
+Solving,pub fn incremental_solve(&mut self, deadline: Option<Instant>) -> SolverResult<Solution> 
+Solving,pub fn solve_with_assumptions(
+Solving,pub fn solve(&mut self, deadline: Option<Instant>) -> SolverResult<Solution> 
+Solving,pub fn minimize(&mut self, objective: impl Into<IAtom>, deadline: Option<Instant>) -> SolverResult<Solution> 
+Solving,pub fn minimize_with(
+Solving,fn race_solvers<F, G>(&mut self, run: F, mut on_new_sol: G, deadline: Option<Instant>) -> SolverResult<Solution>
+Solving,fn is_worker_running(&self) -> bool 
+Solving,fn share_among_solvers(&self, signal: &SolverOutput) 
+Solving,pub fn print_stats(&self) 
+Solving,pub fn new() -> Stats 
+Solving,pub fn add_decision(&mut self, _decision: Lit) 
+Solving,pub fn add_conflict(&mut self, depth: DecLvl, size: usize, lbd: u32) 
+Solving,pub fn add_solution(&mut self, cost: IntCst) 
+Solving,pub fn add_restart(&mut self) 
+Solving,pub fn print_running(&mut self, first: &str) 
+Solving,pub fn num_conflicts(&self) -> u64 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
+Solving,fn number(f: &mut Formatter<'_>, format_str: &str, n: u64) -> Result<(), Error> 
+Solving,fn label(f: &mut Formatter<'_>, label: &str) -> Result<(), Error> 
+Solving,fn val_throughput(f: &mut Formatter<'_>, value: u64, time: &Duration) -> Result<(), Error> 
+Solving,fn new_line(f: &mut Formatter<'_>) -> Result<(), Error> 
+Solving,fn default() -> Self 
+Solving,fn add_decision(&mut self) 
+Solving,fn add_conflict(&mut self, size: usize, depth: DecLvl, lbd: u32) 
+Solving,pub fn avg(&self, measure: u64) -> String 
+Solving,pub fn clear(&mut self) 
+Solving,fn index(&self, index: ReasonerId) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: ReasonerId) -> &mut Self::Output 
+Solving,pub fn from_solution(solution_id: u32) -> Self 
+Solving,pub fn bump_solution_id(&mut self) 
+Solving,pub fn set_from_phase(&mut self, var: VarRef, value: IntCst) 
+Solving,pub fn set_from_solution(&mut self, var: VarRef, value: IntCst) 
+Solving,pub fn get(&self, var: VarRef) -> Option<IntCst> 
+Solving,pub fn configure(&mut self, opt: &str) -> bool 
+Solving,fn default() -> Self 
+Solving,pub fn new(choices: Vec<Lit>) -> Self 
+Solving,pub fn with(choices: Vec<Lit>, params: Params) -> Self 
+Solving,fn import_vars<Var>(&mut self, model: &Model<Var>) 
+Solving,fn is_decision_variable(&self, v: VarRef) -> bool 
+Solving,fn process_events<Var>(&mut self, model: &Model<Var>) 
+Solving,pub fn next_decision<Var>(&mut self, _stats: &Stats, model: &Model<Var>) -> Option<Decision> 
+Solving,pub fn set_default_value(&mut self, var: VarRef, val: IntCst) 
+Solving,pub fn bump_activity<Var>(&mut self, lit: Lit, model: &Model<Var>) 
+Solving,fn default() -> Self 
+Solving,pub fn new(params: BoolHeuristicParams) -> Self 
+Solving,pub fn is_declared(&self, v: VarRef) -> bool 
+Solving,pub fn declare_variable(&mut self, v: VarRef, initial_priority: Option<f64>) 
+Solving,pub fn enqueue_variable(&mut self, v: VarRef) 
+Solving,pub fn peek(&mut self) -> Option<VarRef> 
+Solving,pub fn pop(&mut self) -> Option<VarRef> 
+Solving,pub fn lit_bump_activity(&mut self, lit: Lit) 
+Solving,fn lit_increase_activity(&mut self, lit: Lit, factor: f64) 
+Solving,pub fn lit_update_activity(&mut self, lit: Lit, new_value: f64, factor: f64, num_decays_to_undo: u32) 
+Solving,pub fn decay_activities(&mut self) 
+Solving,fn var_rescale_activity(&mut self) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<Var>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<Var>) 
+Solving,fn new_assignment_found(&mut self, objective: IntCst, assignment: std::sync::Arc<SavedAssignment>) 
+Solving,fn pre_save_state(&mut self, _model: &Model<Var>) 
+Solving,fn pre_conflict_analysis(&mut self, _model: &Model<Var>) 
+Solving,fn conflict(
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<Var> + Send> 
+Solving,fn lbd(clause: &Conflict, model: &Domains) -> u32 
+Solving,fn and_then(self, fallback: Brancher<L>) -> Brancher<L>;
+Solving,fn with_restarts(self, allowed_conflicts: u64, increase_ratio: f32) -> Brancher<L>;
+Solving,fn and_then(self, second: Brancher<L>) -> Brancher<L> 
+Solving,fn with_restarts(self, allowed_conflicts: u64, increase_ratio: f32) -> Brancher<L> 
+Solving,pub fn new(first: Brancher<L>, second: Brancher<L>) -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<L>) 
+Solving,fn new_assignment_found(&mut self, objective_value: IntCst, assignment: Arc<SavedAssignment>) 
+Solving,fn conflict(
+Solving,fn pre_save_state(&mut self, model: &Model<L>) 
+Solving,fn pre_conflict_analysis(&mut self, model: &Model<L>) 
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<L> + Send> 
+Solving,pub fn new(brancher: Brancher<L>) -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<L>) 
+Solving,fn new_assignment_found(&mut self, objective_value: IntCst, assignment: Arc<SavedAssignment>) 
+Solving,fn conflict(
+Solving,fn pre_save_state(&mut self, model: &Model<L>) 
+Solving,fn pre_conflict_analysis(&mut self, model: &Model<L>) 
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<L> + Send> 
+Solving,pub fn new(allowed_conflicts: u64, increase_ratio: f32, brancher: Brancher<L>) -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<L>) 
+Solving,fn new_assignment_found(&mut self, objective_value: IntCst, assignment: Arc<SavedAssignment>) 
+Solving,fn conflict(
+Solving,fn pre_save_state(&mut self, model: &Model<L>) 
+Solving,fn pre_conflict_analysis(&mut self, model: &Model<L>) 
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<L> + Send> 
+Solving,pub fn new(num_conflicts_per_period: u64, increase_factor: f64, branchers: Vec<Brancher<L>>) -> Self 
+Solving,fn current(&self) -> &Brancher<L> 
+Solving,fn current_mut(&mut self) -> &mut Brancher<L> 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<L>) 
+Solving,fn new_assignment_found(&mut self, objective_value: IntCst, assignment: Arc<SavedAssignment>) 
+Solving,fn pre_save_state(&mut self, _model: &Model<L>) 
+Solving,fn pre_conflict_analysis(&mut self, _model: &Model<L>) 
+Solving,fn conflict(
+Solving,fn clone_to_box(&self) -> Brancher<L> 
+Solving,fn default() -> Self 
+Solving,fn decision_stage(&self, var: VarRef, label: Option<&Lbl>, model: &Model<Lbl>) -> u8;
+Solving,fn decision_stage(&self, _: VarRef, _: Option<&L>, _: &Model<L>) -> u8 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_with_heuristic(h: impl Heuristic<Lbl>) -> Self 
+Solving,pub fn new_with_params(params: BranchingParams) -> Self 
+Solving,pub fn new_with(params: BranchingParams, h: impl Heuristic<Lbl>) -> Self 
+Solving,fn priority(&self, variable: VarRef, model: &Model<Lbl>) -> u8 
+Solving,pub fn import_vars(&mut self, model: &Model<Lbl>) 
+Solving,pub fn next_decision(&mut self, stats: &Stats, model: &Model<Lbl>) -> Option<Decision> 
+Solving,pub fn set_default_value(&mut self, var: VarRef, val: IntCst) 
+Solving,pub fn bump_activity(&mut self, bvar: VarRef, model: &Model<Lbl>) 
+Solving,pub fn get_activity(&self, var: VarRef) -> f32 
+Solving,pub fn decay_activities(&mut self) 
+Solving,pub fn incumbent_cost(&self) -> Option<IntCst> 
+Solving,pub fn set_incumbent_cost(&mut self, cost: IntCst) 
+Solving,fn default() -> Self 
+Solving,fn default() -> Self 
+Solving,pub fn new(params: BoolHeuristicParams) -> Self 
+Solving,pub fn is_declared(&self, v: VarRef) -> bool 
+Solving,pub fn declare_variable(&mut self, v: VarRef, stage: u8, initial_activity: Option<f32>) 
+Solving,pub fn enqueue_variable(&mut self, v: VarRef) 
+Solving,fn stage_of(&self, v: VarRef) -> u8 
+Solving,fn heap_of(&self, v: VarRef) -> &Heap 
+Solving,fn mut_heap_of(&mut self, v: VarRef) -> &mut Heap 
+Solving,pub fn extractor(&mut self) -> Popper<'_> 
+Solving,pub fn var_bump_activity(&mut self, var: VarRef) 
+Solving,pub fn activity(&self, var: VarRef) -> f32 
+Solving,pub fn decay_activities(&mut self) 
+Solving,fn var_rescale_activity(&mut self) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,pub fn peek(&mut self) -> Option<VarRef> 
+Solving,pub fn pop(&mut self) -> Option<VarRef> 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, stats: &Stats, model: &Model<Lbl>) -> Option<Decision> 
+Solving,fn import_vars(&mut self, model: &Model<Lbl>) 
+Solving,fn new_assignment_found(&mut self, objective: IntCst, assignment: Arc<SavedAssignment>) 
+Solving,fn conflict(
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<Lbl> + Send> 
+Solving,pub fn new(preferred_value: PreferredValue) -> Self 
+Solving,pub fn with_vars(vars: impl IntoIterator<Item = VarRef>, preferred_value: PreferredValue) -> Self 
+Solving,pub fn with_min() -> Self 
+Solving,pub fn with_max() -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, _stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<L> + Send> 
+Solving,fn restart(&mut self) -> bool 
+Solving,pub fn new(scaling_factor: f32, period: u32) -> Self 
+Solving,fn scale(&mut self) 
+Solving,fn conflict(
+Solving,fn restart(&mut self) -> bool 
+Solving,fn default() -> Self 
+Solving,fn restart(&mut self) -> bool;
+Solving,fn conflict(
+Solving,fn restart(&mut self) -> bool 
+Solving,fn conflict(
+Solving,fn default() -> Self 
+Solving,fn from(value: Never) -> Self 
+Solving,fn from(value: Geometric) -> Self 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn select() 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn select() 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn select() 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn select() 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit;
+Solving,fn conflict(
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn conflict(
+Solving,fn default() -> Self 
+Solving,fn from(value: Min) -> Self 
+Solving,fn from(value: Max) -> Self 
+Solving,fn from(value: LowerHalf) -> Self 
+Solving,fn from(value: UpperHalf) -> Self 
+Solving,fn from(value: Dynamic) -> Self 
+Solving,pub fn new(period: u32) -> Self 
+Solving,fn get(&self, var: &VarRef) -> i32 
+Solving,fn zero_is_pos(&mut self) -> bool 
+Solving,fn bump(&mut self, var: VarRef, value: i32) 
+Solving,fn handle(&mut self, lit: &Lit) 
+Solving,fn decay(&mut self) 
+Solving,fn handle_decay(&mut self) 
+Solving,fn select(&mut self, var: VarRef, model: &Model<Lbl>) -> Lit 
+Solving,fn conflict(
+Solving,fn default() -> Self 
+Solving,fn basic_model() -> (Model<String>, VarRef, VarRef, VarRef) 
+Solving,fn handle() 
+Solving,fn select() 
+Solving,pub fn new(var_order: VarOrderKind, value_order: ValueOrderKind, restart: RestartKind) -> Self 
+Solving,fn next_decision(&mut self, _stats: &Stats, model: &Model<Lbl>) -> Option<Decision> 
+Solving,fn clone_to_box(&self) -> Brancher<Lbl> 
+Solving,fn conflict(
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,pub fn new(decay_factor: f32) -> Self 
+Solving,fn get(&self, var: VarRef) -> f32 
+Solving,fn bump(&mut self, var: VarRef) 
+Solving,fn decay(&mut self) 
+Solving,fn conflict(
+Solving,fn select(&self, model: &Model<Lbl>) -> Option<VarRef> 
+Solving,fn default() -> Self 
+Solving,fn select(&self, model: &Model<Lbl>) -> Option<VarRef> 
+Solving,fn select() 
+Solving,fn select(&self, model: &Model<Lbl>) -> Option<VarRef>;
+Solving,fn conflict(
+Solving,fn select(&self, model: &Model<Lbl>) -> Option<VarRef> 
+Solving,fn conflict(
+Solving,fn default() -> Self 
+Solving,fn from(value: Activity) -> Self 
+Solving,fn from(value: Lexical) -> Self 
+Solving,fn from(value: FirstFail) -> Self 
+Solving,fn select(&self, model: &Model<Lbl>) -> Option<VarRef> 
+Solving,fn select() 
+Solving,pub fn new(seed: u64) -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn next_decision(&mut self, _stats: &Stats, model: &Model<L>) -> Option<Decision> 
+Solving,fn clone_to_box(&self) -> Box<dyn SearchControl<L> + Send> 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(first: SymId, last: SymId) -> Self 
+Solving,pub fn singleton(item: SymId) -> Self 
+Solving,pub fn size(self) -> u32 
+Solving,pub fn bounds(self) -> Option<(SymId, SymId)> 
+Solving,pub fn into_singleton(self) -> Option<SymId> 
+Solving,pub fn contains(self, sym: SymId) -> bool 
+Solving,fn next(&mut self) -> Option<Self::Item> 
+Solving,pub fn empty() -> Self 
+Solving,pub fn new(th: TypeHierarchy, symbols: Vec<(Sym, Sym)>) -> Result<Self> 
+Solving,pub fn id<W>(&self, sym: &W) -> Option<SymId>
+Solving,pub fn symbol(&self, id: SymId) -> &Sym 
+Solving,pub fn type_of(&self, id: SymId) -> TypeId 
+Solving,pub fn iter(&self) -> ContiguousSymbols 
+Solving,pub fn instances_of_type(&self, tpe: TypeId) -> ContiguousSymbols 
+Solving,pub fn format<'a>(&self, sexpr: impl IntoIterator<Item = &'a SymId>) -> String
+Solving,pub fn int_value(self) -> IntCst 
+Solving,fn fmt(&self, f: &mut Formatter) -> fmt::Result 
+Solving,fn fmt(&self, f: &mut Formatter) -> fmt::Result 
+Solving,pub fn new(sym: SymId, tpe: TypeId) -> Self 
+Solving,fn from(ts: TypedSym) -> Self 
+Solving,fn instances() 
+Solving,fn enumeration() 
+Solving,pub fn table() -> SymbolTable 
+Solving,pub fn new() -> Self 
+Solving,pub fn get(&self, conjunction: &StableLitSet) -> Option<Lit> 
+Solving,pub fn get_tautology_of_scope(&self, scope: Lit) -> Option<Lit> 
+Solving,pub fn set_tautology_of_scope(&mut self, scope: Lit, tautology: Lit) 
+Solving,pub fn insert(&mut self, conjunction: StableLitSet, literal: Lit) 
+Solving,pub fn conjuncts(&self, lit: Lit) -> Option<impl IntoIterator<Item = Lit> + '_> 
+Solving,fn default() -> Self 
+Solving,fn from(t: TypeId) -> Self 
+Solving,fn from(id: usize) -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn try_from(value: Type) -> Result<Self, Self::Error> 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(mut types: Vec<(Sym, Option<Sym>)>) -> Result<Self, UnreachableFromRoot<Sym>> 
+Solving,pub fn top_type(&self) -> TypeId 
+Solving,pub fn id_of<T2>(&self, tpe: &T2) -> Option<TypeId>
+Solving,pub fn from_id(&self, tid: TypeId) -> &Sym 
+Solving,pub fn is_subtype(&self, tpe: TypeId, possible_subtype: TypeId) -> bool 
+Solving,pub fn are_compatible(&self, t1: TypeId, t2: TypeId) -> bool 
+Solving,pub fn last_subtype(&self, tpe: TypeId) -> TypeId 
+Solving,pub fn types(&self) -> impl Iterator<Item = TypeId> 
+Solving,fn type_system() 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_with_symbols(symbols: Arc<SymbolTable>) -> Self 
+Solving,fn set_label(&mut self, var: VarRef, l: impl Into<Lbl>) 
+Solving,pub fn get_variable(&self, label: &Lbl) -> Option<VarRef> 
+Solving,fn set_type(&mut self, var: VarRef, typ: Type) 
+Solving,fn add_half_reification_constraint(&mut self, value: Lit, expr: ReifExpr) 
+Solving,fn add_reification_constraint(&mut self, value: Lit, expr: ReifExpr) 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_with_symbols(symbols: Arc<SymbolTable>) -> Self 
+Solving,pub fn with_domains(mut self, domains: Domains) -> Model<Lbl> 
+Solving,pub fn new_bvar(&mut self, label: impl Into<Lbl>) -> BVar 
+Solving,pub fn new_optional_bvar(&mut self, presence: Lit, label: impl Into<Lbl>) -> BVar 
+Solving,pub fn new_presence_variable(&mut self, scope: Lit, label: impl Into<Lbl>) -> BVar 
+Solving,pub fn get_conjunctive_scope(&mut self, presence_variables: &[Lit]) -> Lit 
+Solving,pub fn get_tautology_of_scope(&mut self, scope: Lit) -> Lit 
+Solving,fn new_conjunctive_presence_variable(&mut self, set: impl Into<StableLitSet>) -> Lit 
+Solving,fn create_bvar(&mut self, presence: Option<Lit>, label: impl Into<Lbl>) -> BVar 
+Solving,pub fn new_ivar(&mut self, lb: IntCst, ub: IntCst, label: impl Into<Lbl>) -> IVar 
+Solving,pub fn new_fvar(&mut self, num_lb: IntCst, num_ub: IntCst, denom: IntCst, label: impl Into<Lbl>) -> FVar 
+Solving,pub fn new_optional_fvar(
+Solving,pub fn new_optional_ivar(&mut self, lb: IntCst, ub: IntCst, presence: Lit, label: impl Into<Lbl>) -> IVar 
+Solving,fn create_ivar(&mut self, lb: IntCst, ub: IntCst, presence: Option<Lit>, label: impl Into<Lbl>) -> IVar 
+Solving,pub fn new_sym_var(&mut self, tpe: TypeId, label: impl Into<Lbl>) -> SVar 
+Solving,pub fn new_optional_sym_var(&mut self, tpe: TypeId, presence: impl Into<Lit>, label: impl Into<Lbl>) -> SVar 
+Solving,fn create_sym_var(&mut self, tpe: TypeId, presence: Option<Lit>, label: impl Into<Lbl>) -> SVar 
+Solving,pub fn unifiable(&self, a: impl Into<Atom>, b: impl Into<Atom>) -> bool 
+Solving,pub fn unifiable_seq<A: Into<Atom> + Copy, B: Into<Atom> + Copy>(&self, a: &[A], b: &[B]) -> bool 
+Solving,pub fn reify<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Lit 
+Solving,pub fn half_reify<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Lit 
+Solving,fn simplify(&self, expr: &mut ReifExpr) 
+Solving,pub fn check_reified_full<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Option<Lit> 
+Solving,pub fn check_reified_half<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Option<Lit> 
+Solving,pub fn check_reified_any<Expr: Reifiable<Lbl>>(&mut self, expr: Expr) -> Option<Lit> 
+Solving,pub fn enforce<Expr: Reifiable<Lbl>>(&mut self, expr: Expr, scope: impl IntoIterator<Item = Lit>) 
+Solving,pub fn enforce_all<Expr: Reifiable<Lbl>>(
+Solving,pub fn enforce_if<Expr: Reifiable<Lbl>>(&mut self, enabler: Lit, expr: Expr) 
+Solving,pub fn bind<Expr: Reifiable<Lbl>>(&mut self, expr: Expr, value: Lit) 
+Solving,fn bind_literals(&mut self, l1: Lit, l2: Lit) 
+Solving,pub fn fmt(&self, atom: impl Into<Atom>) -> impl std::fmt::Display + '_ 
+Solving,pub fn print_state(&self) 
+Solving,fn default() -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn restore(&mut self, saved_id: DecLvl) 
+Solving,fn entails(&self, literal: Lit) -> bool 
+Solving,fn var_domain(&self, var: impl Into<IAtom>) -> IntDomain 
+Solving,fn presence_literal(&self, variable: impl Term) -> Lit 
+Solving,fn to_owned_assignment(&self) -> SavedAssignment 
+Solving,fn get_shape(&self) -> &ModelShape<Lbl> 
+Solving,pub fn new(required: impl IntoIterator<Item = Lit>, guards: impl IntoIterator<Item = Lit>) -> Self 
+Solving,pub fn to_conjunction<Lits: IntoIterator<Item = Lit>>(
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn denom(&self) -> IntCst 
+Solving,pub fn factor(&self) -> IntCst 
+Solving,pub fn var(&self) -> IVar 
+Solving,fn from(var: IVar) -> Self 
+Solving,fn from(value: IntCst) -> Self 
+Solving,fn neg(self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn zero() -> LinearSum 
+Solving,pub fn constant_int(n: IntCst) -> LinearSum 
+Solving,pub fn constant_rational(num: IntCst, denom: IntCst) -> LinearSum 
+Solving,pub fn of<T: Into<LinearSum> + Clone>(elements: Vec<T>) -> LinearSum 
+Solving,fn set_denom(&mut self, new_denom: IntCst) 
+Solving,fn add_term(&mut self, mut added: LinearTerm) 
+Solving,fn add_rational(&mut self, num: IntCst, denom: IntCst) 
+Solving,pub fn leq<T: Into<LinearSum>>(self, upper_bound: T) -> LinearLeq 
+Solving,pub fn geq<T: Into<LinearSum>>(self, lower_bound: T) -> LinearLeq 
+Solving,pub fn constant(&self) -> IntCst 
+Solving,pub fn denom(&self) -> IntCst 
+Solving,pub fn terms(&self) -> &[LinearTerm] 
+Solving,pub fn simplify(&self) -> LinearSum 
+Solving,fn from(term: LinearTerm) -> Self 
+Solving,fn from(constant: IntCst) -> Self 
+Solving,fn from(value: FAtom) -> Self 
+Solving,fn from(value: IAtom) -> Self 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn add(self, rhs: T) -> Self::Output 
+Solving,fn sub(self, rhs: T) -> Self::Output 
+Solving,fn mul(self, rhs: T) -> Self::Output 
+Solving,fn add_assign(&mut self, rhs: T) 
+Solving,fn sub_assign(&mut self, rhs: T) 
+Solving,fn mul_assign(&mut self, rhs: T) 
+Solving,fn neg(mut self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(sum: LinearSum, ub: IntCst) -> LinearLeq 
+Solving,fn from(value: LinearLeq) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn neg(self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn not(mut self) -> Self::Output 
+Solving,fn test_term_new() 
+Solving,fn test_term_int() 
+Solving,fn test_term_rational() 
+Solving,fn test_term_constant_int() 
+Solving,fn test_term_constant_rational() 
+Solving,fn test_term_from_ivar() 
+Solving,fn test_term_from_int_cst() 
+Solving,fn test_term_eq() 
+Solving,fn test_term_neg() 
+Solving,fn test_term_getters() 
+Solving,fn test_term_display() 
+Solving,fn test_sum_zero() 
+Solving,fn test_sum_constant_int() 
+Solving,fn test_sum_constant_rational() 
+Solving,fn test_sum_of_elements_same_denom() 
+Solving,fn test_sum_of_elements_different_denom() 
+Solving,fn test_sum_set_denom() 
+Solving,fn test_sum_add_term() 
+Solving,fn test_sum_add_rational() 
+Solving,fn test_sum_leq() 
+Solving,fn test_sum_geq() 
+Solving,fn test_sum_getters() 
+Solving,fn test_sum_simplify() 
+Solving,fn test_sum_from_linear_term() 
+Solving,fn test_sum_from_int_cst() 
+Solving,fn test_sum_from_fatom() 
+Solving,fn test_sum_from_iatom() 
+Solving,fn test_sum_add() 
+Solving,fn test_sum_mul() 
+Solving,fn test_sum_sub() 
+Solving,fn test_sum_add_assign() 
+Solving,fn test_sum_sub_assign() 
+Solving,fn test_sum_mul_assign() 
+Solving,fn test_sum_neg() 
+Solving,fn test_sum_display() 
+Solving,fn test_lcm() 
+Solving,fn test_simplify_nflinear_leq() 
+Solving,pub fn leq(lhs: impl Into<IAtom>, rhs: impl Into<IAtom>) -> Leq 
+Solving,pub fn lt(lhs: impl Into<IAtom>, rhs: impl Into<IAtom>) -> Leq 
+Solving,pub fn geq(lhs: impl Into<IAtom>, rhs: impl Into<IAtom>) -> Leq 
+Solving,pub fn gt(lhs: impl Into<IAtom>, rhs: impl Into<IAtom>) -> Leq 
+Solving,pub fn f_leq(lhs: impl Into<FAtom>, rhs: impl Into<FAtom>) -> Leq 
+Solving,pub fn f_lt(lhs: impl Into<FAtom>, rhs: impl Into<FAtom>) -> Leq 
+Solving,pub fn f_geq(lhs: impl Into<FAtom>, rhs: impl Into<FAtom>) -> Leq 
+Solving,pub fn eq(lhs: impl Into<Atom>, rhs: impl Into<Atom>) -> Eq 
+Solving,pub fn neq(lhs: impl Into<Atom>, rhs: impl Into<Atom>) -> Neq 
+Solving,pub fn or(disjuncts: impl Into<Disjunction>) -> Or 
+Solving,pub fn and(disjuncts: impl Into<Box<[Lit]>>) -> And 
+Solving,pub fn implies(a: impl Into<Lit>, b: impl Into<Lit>) -> Or 
+Solving,pub fn eq_mul(lhs: impl Into<IVar>, factor1: impl Into<IVar>, factor2: impl Into<IVar>) -> EqMul 
+Solving,pub fn alternative<T: Into<Atom>>(main: impl Into<Atom>, alternatives: impl IntoIterator<Item = T>) -> Alternative 
+Solving,fn from(value: And) -> Self 
+Solving,fn not(self) -> Self::Output 
+Solving,fn from(value: Leq) -> Self 
+Solving,fn decompose(self, model: &mut Model<Lbl>) -> ReifExpr 
+Solving,fn int_eq<Lbl: Label>(a: IAtom, b: IAtom, model: &mut Model<Lbl>) -> ReifExpr 
+Solving,fn decompose(self, model: &mut Model<Lbl>) -> ReifExpr 
+Solving,pub fn new(num: IVar, denom: IntCst) -> FVar 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn from(f: FVar) -> Self 
+Solving,fn add(self, _: Epsilon) -> Self::Output 
+Solving,fn add(self, i: IntCst) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(num: IAtom, denom: IntCst) -> FAtom 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn from(value: Rational) -> Self 
+Solving,fn try_from(value: FAtom) -> Result<Self, Self::Error> 
+Solving,fn from(v: FVar) -> Self 
+Solving,fn try_from(value: FAtom) -> Result<Self, Self::Error> 
+Solving,fn add(self, _: Epsilon) -> Self::Output 
+Solving,fn sub(self, _: Epsilon) -> Self::Output 
+Solving,fn add(self, i: IntCst) -> Self::Output 
+Solving,fn sub(self, i: IntCst) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn leq(self, i: IntCst) -> Lit 
+Solving,pub fn geq(self, i: IntCst) -> Lit 
+Solving,pub fn lt(self, i: IntCst) -> Lit 
+Solving,pub fn gt(self, i: IntCst) -> Lit 
+Solving,fn from(i: IVar) -> Self 
+Solving,fn from(value: IVar) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(var: IVar, shift: IntCst) -> IAtom 
+Solving,pub fn lexical_cmp(&self, other: &IAtom) -> Ordering 
+Solving,pub fn lt_lit(self, value: IntCst) -> Lit 
+Solving,pub fn le_lit(self, value: IntCst) -> Lit 
+Solving,pub fn gt_lit(self, value: IntCst) -> Lit 
+Solving,pub fn ge_lit(self, value: IntCst) -> Lit 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn from(v: IVar) -> Self 
+Solving,fn from(v: VarRef) -> Self 
+Solving,fn from(i: IntCst) -> Self 
+Solving,fn try_from(value: IAtom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: IAtom) -> Result<Self, Self::Error> 
+Solving,fn add(self, rhs: IntCst) -> Self::Output 
+Solving,fn add(self, rhs: IntCst) -> Self::Output 
+Solving,fn sub(self, rhs: IntCst) -> Self::Output 
+Solving,fn sub(self, rhs: IntCst) -> Self::Output 
+Solving,fn mul(self, rhs: IntCst) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(var: VarRef, tpe: TypeId) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new_constant(sym: SymId, tpe: TypeId) -> Self 
+Solving,pub fn new_variable(svar: SVar) -> Self 
+Solving,pub fn tpe(&self) -> TypeId 
+Solving,pub fn int_view(self) -> IAtom 
+Solving,pub fn variable(&self) -> VarRef 
+Solving,fn from(s: SVar) -> Self 
+Solving,fn from(v: SVar) -> Self 
+Solving,fn from(s: TypedSym) -> Self 
+Solving,fn try_from(value: SAtom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: SAtom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: SAtom) -> Result<Self, Self::Error> 
+Solving,pub fn new<T: Into<Atom>>(main: impl Into<Atom>, alternatives: impl IntoIterator<Item = T>) -> Self 
+Solving,fn from(value: Alternative) -> Self 
+Solving,fn try_from(value: Alternative) -> Result<Self, Self::Error> 
+Solving,pub fn new(dvar: VarRef) -> Self 
+Solving,pub fn int_view(self) -> IVar 
+Solving,pub fn true_lit(self) -> Lit 
+Solving,pub fn false_lit(self) -> Lit 
+Solving,fn from(i: BVar) -> Self 
+Solving,fn from(v: BVar) -> Self 
+Solving,fn from(i: usize) -> Self 
+Solving,fn from(b: BVar) -> Self 
+Solving,fn from(b: BVar) -> Self 
+Solving,fn not(self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn kind(self) -> Kind 
+Solving,pub fn int_view(self) -> Option<IAtom> 
+Solving,pub fn variable(self) -> VarRef 
+Solving,pub fn tpe(self) -> Type 
+Solving,fn from(b: Lit) -> Self 
+Solving,fn from(i: i64) -> Self 
+Solving,fn from(d: IAtom) -> Self 
+Solving,fn from(d: FAtom) -> Self 
+Solving,fn from(s: SAtom) -> Self 
+Solving,fn from(v: Variable) -> Self 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn from(b: bool) -> Self 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,pub fn interned_full(&mut self, e: &ReifExpr) -> Option<Lit> 
+Solving,pub fn interned_half(&mut self, e: &ReifExpr) -> Option<Lit> 
+Solving,pub fn intern_full_as(&mut self, e: ReifExpr, lit: Lit) 
+Solving,pub fn intern_half_as(&mut self, e: ReifExpr, lit: Lit) 
+Solving,pub fn original_full(&self, lit: Lit) -> Option<&ReifExpr> 
+Solving,fn test_reif() 
+Solving,pub fn new(lhs: impl Into<VarRef>, factor1: impl Into<VarRef>, factor2: impl Into<VarRef>) -> Self 
+Solving,fn from(value: EqMul) -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(lhs: impl Into<VarRef>, rhs: impl Into<VarRef>, lit: impl Into<Lit>) -> Self 
+Solving,fn from(value: EqVarMulLit) -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn kind(self) -> Kind 
+Solving,fn from(x: BVar) -> Self 
+Solving,fn from(x: IVar) -> Self 
+Solving,fn from(x: SVar) -> Self 
+Solving,fn from(f: FVar) -> Self 
+Solving,fn from(v: Variable) -> Self 
+Solving,fn try_from(value: Variable) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Variable) -> Result<Self, Self::Error> 
+Solving,fn try_from(value: Variable) -> Result<Self, Self::Error> 
+Solving,pub fn new<T: Into<IAtom>>(max: impl Into<IAtom>, elements: impl IntoIterator<Item = T>) -> Self 
+Solving,pub fn new<T: Into<IAtom>>(min: impl Into<IAtom>, elements: impl IntoIterator<Item = T>) -> Self 
+Solving,fn from(em: EqMax) -> Self 
+Solving,fn from(em: EqMin) -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn from(value: Cst) -> Self 
+Solving,fn try_from(value: Atom) -> Result<Self, Self::Error> 
+Solving,fn from(value: IntCst) -> Self 
+Solving,fn from(value: Rational) -> Self 
+Solving,fn from(value: bool) -> Self 
+Solving,fn from(value: TypedSym) -> Self 
+Solving,fn entails(&self, literal: Lit) -> bool;
+Solving,fn value(&self, literal: Lit) -> Option<bool>;
+Solving,fn presence(&self, literal: Lit) -> Lit;
+Solving,fn value_of_clause(&self, disjunction: Disj) -> Option<bool> 
+Solving,fn entailed_clause(&self, disjuncts: Disj) -> bool 
+Solving,fn violated_clause(&self, disjuncts: Disj) -> bool 
+Solving,fn pending_clause(&self, disjuncts: Disj) -> bool 
+Solving,fn fusable(&self, l1: Lit, l2: Lit) -> bool 
+Solving,fn unit_clause(&self, disjuncts: Disj) -> bool 
+Solving,fn entails(&self, literal: Lit) -> bool 
+Solving,fn value(&self, literal: Lit) -> Option<bool> 
+Solving,fn presence(&self, literal: Lit) -> Lit 
+Solving,fn entails(&self, literal: Lit) -> bool;
+Solving,fn var_domain(&self, var: impl Into<IAtom>) -> IntDomain;
+Solving,fn presence_literal(&self, variable: impl Term) -> Lit;
+Solving,fn value_of_literal(&self, literal: Lit) -> Option<bool> 
+Solving,fn is_undefined_literal(&self, literal: Lit) -> bool 
+Solving,fn present(&self, atom: impl Into<Atom>) -> Option<bool> 
+Solving,fn sym_present(&self, atom: impl Into<SAtom>) -> Option<bool> 
+Solving,fn f_domain(&self, sum: impl Into<LinearSum>) -> FixedDomain 
+Solving,fn domain_of(&self, atom: impl Into<IAtom>) -> (IntCst, IntCst) 
+Solving,fn opt_domain_of(&self, atom: impl Into<IAtom>) -> OptDomain 
+Solving,fn to_owned_assignment(&self) -> SavedAssignment;
+Solving,fn lower_bound(&self, int_var: IVar) -> IntCst 
+Solving,fn upper_bound(&self, int_var: IVar) -> IntCst 
+Solving,fn sym_domain_of(&self, atom: impl Into<SAtom>) -> ContiguousSymbols 
+Solving,fn sym_value_of(&self, atom: impl Into<SAtom>) -> Option<SymId> 
+Solving,fn evaluate(&self, atom: Atom) -> Option<Cst> 
+Solving,fn boolean_value_of(&self, bool_atom: impl Into<Lit>) -> Option<bool> 
+Solving,fn int_bounds(&self, atom: impl Into<Atom>) -> (IntCst, IntCst) 
+Solving,fn val(&self, var: VarRef) -> Option<IntCst>;
+Solving,fn sval(&self, svar: impl Into<SignedVar>) -> Option<IntCst> 
+Solving,fn evaluate(&self, atom: Atom) -> Option<Cst> 
+Solving,fn evaluate_seq(&self, atoms: &[Atom]) -> Option<Vec<Cst>> 
+Solving,fn evaluate_bool(&self, lit: Lit) -> Option<bool> 
+Solving,fn evaluate_int(&self, iatom: IAtom) -> Option<IntCst> 
+Solving,fn evaluate_fixed(&self, e: FAtom) -> Option<Rational> 
+Solving,fn evaluate_sym(&self, satom: SAtom) -> Option<TypedSym> 
+Solving,pub fn new() -> Self 
+Solving,fn add_var(&mut self, var: VarRef, val: IntCst) -> Result<(), InvalidAssignment> 
+Solving,pub fn add(&mut self, atom: impl Into<Atom>, value: impl Into<Cst>) -> Result<(), InvalidAssignment> 
+Solving,pub fn add_int(&mut self, ai: IAtom, i: IntCst) -> Result<(), InvalidAssignment> 
+Solving,pub fn add_sym(&mut self, expr: SAtom, val: TypedSym) -> Result<(), InvalidAssignment> 
+Solving,pub fn add_bool(&mut self, e: Lit, val: bool) -> Result<(), InvalidAssignment> 
+Solving,pub fn add_fixed(&mut self, e: FAtom, v: Rational) -> Result<(), InvalidAssignment> 
+Solving,fn val(&self, var: VarRef) -> Option<IntCst> 
+Solving,fn default() -> Self 
+Solving,fn test_partial_assignment() 
+Solving,fn val(ass: &PartialAssignmentBuilder, a: impl Into<Atom>, val: impl Into<Cst>) 
+Solving,fn undef(ass: &PartialAssignmentBuilder, a: impl Into<Atom>) 
+Solving,fn entails(&self, literal: Lit) -> bool;
+Solving,fn value(&self, literal: Lit) -> Option<bool> 
+Solving,fn presence_literal(&self, variable: VarRef) -> Lit;
+Solving,fn entails(&self, literal: Lit) -> bool 
+Solving,fn presence_literal(&self, variable: VarRef) -> Lit 
+Solving,fn entails(&self, literal: Lit) -> bool 
+Solving,fn var_domain(&self, int: impl Into<IAtom>) -> IntDomain 
+Solving,fn presence_literal(&self, variable: impl Term) -> Lit 
+Solving,fn to_owned_assignment(&self) -> SavedAssignment 
+Solving,fn get_shape(&self) -> &ModelShape<Lbl>;
+Solving,fn get_label(&self, var: impl Into<VarRef>) -> Option<&Lbl> 
+Solving,fn get_type(&self, var: impl Into<VarRef>) -> Option<Type> 
+Solving,fn get_var(&self, label: &Lbl) -> Option<VarRef> 
+Solving,fn get_int_var(&self, label: &Lbl) -> Option<IVar> 
+Solving,fn get_symbol(&self, sym: SymId) -> &Sym 
+Solving,fn get_type_of(&self, sym: SymId) -> TypeId 
+Solving,fn get_symbol_table(&self) -> &SymbolTable 
+Solving,fn get_reified_expr(&self, lit: Lit) -> Option<&ReifExpr> 
+Solving,pub fn fmt<Lbl: Label>(atom: impl Into<Atom>, ctx: &impl Shaped<Lbl>) -> impl std::fmt::Display + '_ 
+Solving,fn format_impl<Lbl: Label>(ctx: &impl Shaped<Lbl>, atom: Atom, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn format_impl_bool<Lbl: Label>(ctx: &impl Shaped<Lbl>, b: Lit, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn format_impl_int<Lbl: Label>(ctx: &impl Shaped<Lbl>, i: IAtom, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn format_impl_fixed<Lbl: Label>(
+Solving,fn format_impl_sym<Lbl: Label>(
+Solving,fn format_impl_var<Lbl: Label>(
+Solving,fn format_reif<Lbl: Label>(ctx: &impl Shaped<Lbl>, e: &ReifExpr, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn is_numeric(&self) -> bool 
+Solving,fn from(tpe: Type) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn from(e: ConversionError) -> Self 
+Solving,fn from(i: $C) -> Self 
+Solving,fn try_from(value: $A) -> Result<Self, Self::Error> 
+Solving,fn from(i: $C) -> Self 
+Solving,fn check(m: &Model, x: impl Into<Atom>, result: &str) 
+Solving,fn test_syntax() 
+Solving,pub fn new() -> Self 
+Solving,pub fn get(&self, var: VarRef) -> Option<&Lbl> 
+Solving,pub fn insert(&mut self, var: VarRef, label: impl Into<Arc<Lbl>>)
+Solving,pub fn variables_with_label(&self, label: &Lbl) -> &[VarRef]
+Solving,fn default() -> Self 
+Solving,pub fn makes_true(&self, lit: Lit) -> bool 
+Solving,pub fn new_literal(&self) -> Lit 
+Solving,pub fn previous_literal(&self) -> Lit 
+Solving,pub fn initial_upper_bound(var: VarRef, ub: IntCst) -> Self 
+Solving,pub fn initial_lower_bound(var: VarRef, lb: IntCst) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(upper_bound: IntCst, cause: ChangeIndex) -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_var(&mut self, lb: IntCst, ub: IntCst) -> VarRef 
+Solving,pub fn ub(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn lb(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn entails(&self, lit: Lit) -> bool 
+Solving,pub fn set_upper_bound(
+Solving,pub fn num_variables(&self) -> usize 
+Solving,pub fn variables(&self) -> impl Iterator<Item = VarRef> 
+Solving,pub fn bound_variables(&self) -> impl Iterator<Item = (VarRef, IntCst)> + '_ 
+Solving,pub fn implying_event(&self, lit: Lit) -> Option<EventIndex> 
+Solving,fn next(&mut self) -> Option<Self::Item> 
+Solving,pub fn num_events(&self) -> u32 
+Solving,pub fn last_event(&self) -> Option<&Event> 
+Solving,pub fn trail(&self) -> &ObsTrail<Event> 
+Solving,fn undo_event(bounds: &mut RefVec<SignedVar, ValueCause>, ev: &Event) 
+Solving,pub fn undo_last_event(&mut self) -> Origin 
+Solving,fn default() -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn test_entails() 
+Solving,fn test_variable_iter() 
+Solving,pub fn current(domains: &'a Domains) -> Self 
+Solving,pub fn preceding(domains: &'a Domains, lit: Lit) -> Self 
+Solving,pub fn ub(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn lb(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn bounds(&self, var: impl Into<SignedVar>) -> (IntCst, IntCst) 
+Solving,pub fn entails(&self, lit: Lit) -> bool 
+Solving,pub fn value(&self, lit: Lit) -> Option<bool> 
+Solving,pub fn presence(&self, term: impl Term) -> Lit 
+Solving,pub fn present(&self, term: impl Term) -> Option<bool> 
+Solving,fn domains(&self) -> &Domains 
+Solving,pub fn implying_event(&self, l: Lit) -> Option<EventIndex> 
+Solving,pub fn get_event(&self, e: EventIndex) -> &Event 
+Solving,pub fn entailing_level(&self, lit: Lit) -> DecLvl 
+Solving,pub fn test_history_access() 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_var(&mut self, lb: IntCst, ub: IntCst) -> VarRef 
+Solving,pub fn add_implication(&mut self, from: Lit, to: Lit) 
+Solving,pub fn new_presence_literal(&mut self, scope: Lit) -> Lit 
+Solving,pub fn new_optional_var(&mut self, lb: IntCst, ub: IntCst, presence: Lit) -> VarRef 
+Solving,pub fn presence(&self, term: impl Term) -> Lit 
+Solving,pub fn only_present_with(&self, a: VarRef, b: VarRef) -> bool 
+Solving,pub fn implies(&self, a: Lit, b: Lit) -> bool 
+Solving,pub fn exclusive(&self, a: Lit, b: Lit) -> bool 
+Solving,pub fn always_present_together(&self, a: VarRef, b: VarRef) -> bool 
+Solving,pub fn present(&self, term: impl Term) -> Option<bool> 
+Solving,pub fn domain(&self, var: impl Into<VarRef>) -> OptDomain 
+Solving,pub fn int_domain(&self, var: impl Into<VarRef>) -> IntDomain 
+Solving,pub fn bounds(&self, v: VarRef) -> (IntCst, IntCst) 
+Solving,pub fn ub(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn lb(&self, var: impl Into<SignedVar>) -> IntCst 
+Solving,pub fn is_bound(&self, var: VarRef) -> bool 
+Solving,pub fn entails(&self, lit: Lit) -> bool 
+Solving,pub fn value(&self, lit: Lit) -> Option<bool> 
+Solving,pub fn decide(&mut self, lit: Lit) -> Result<bool, InvalidUpdate> 
+Solving,pub fn assume(&mut self, lit: Lit) -> Result<bool, InvalidUpdate> 
+Solving,pub fn set_lb(&mut self, var: impl Into<SignedVar>, new_lb: IntCst, cause: Cause) -> Result<bool, InvalidUpdate> 
+Solving,pub fn set_ub(&mut self, var: impl Into<SignedVar>, new_ub: IntCst, cause: Cause) -> Result<bool, InvalidUpdate> 
+Solving,pub fn set(&mut self, literal: Lit, cause: Cause) -> Result<bool, InvalidUpdate> 
+Solving,fn set_impl(&mut self, literal: Lit, cause: DirectOrigin) -> Result<bool, InvalidUpdate> 
+Solving,pub fn set_upper_bound(&mut self, affected: SignedVar, ub: IntCst, cause: Cause) -> Result<bool, InvalidUpdate> 
+Solving,fn set_upper_bound_impl(&mut self, affected: SignedVar, ub: IntCst, cause: Origin) -> Result<bool, InvalidUpdate> 
+Solving,fn set_bound_optional(
+Solving,fn set_upper_bound_non_optional(
+Solving,pub fn set_unchecked(&mut self, literal: Lit, cause: Cause) 
+Solving,pub fn set_bound_unchecked(&mut self, affected: SignedVar, new_ub: IntCst, cause: Cause) 
+Solving,pub fn variables(&self) -> impl Iterator<Item = VarRef> 
+Solving,pub fn num_variables(&self) -> usize 
+Solving,pub fn bound_variables(&self) -> impl Iterator<Item = (VarRef, IntCst)> + '_ 
+Solving,pub fn implying_event(&self, lit: Lit) -> Option<EventIndex> 
+Solving,pub fn num_events(&self) -> u32 
+Solving,pub fn last_event(&self) -> Option<&Event> 
+Solving,pub fn trail(&self) -> &ObsTrail<Event> 
+Solving,pub fn entailing_level(&self, lit: Lit) -> DecLvl 
+Solving,pub fn get_event(&self, loc: EventIndex) -> &Event 
+Solving,pub fn undo_last_event(&mut self) -> Origin 
+Solving,pub fn clause_for_invalid_inferrence(&mut self, failed: InvalidUpdate, explainer: &mut impl Explainer) -> Conflict 
+Solving,pub fn refine_explanation(&mut self, explanation: Explanation, explainer: &mut impl Explainer) -> Conflict 
+Solving,fn extract_assumptions_implying(
+Solving,pub fn extract_unsat_core_after_invalid_assumption(
+Solving,pub fn extract_unsat_core_after_conflict(
+Solving,pub fn decisions(&self) -> Vec<(DecLvl, Lit)> 
+Solving,pub fn assumptions(&self) -> Vec<Lit> 
+Solving,fn add_implying_literals_to_explanation_impl(
+Solving,pub fn implying_literals(&self, literal: Lit, explainer: &mut dyn Explainer) -> Option<Vec<Lit>> 
+Solving,pub fn fusable(&self, l1: Lit, l2: Lit) -> bool 
+Solving,fn default() -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn literals(&self) -> &[Lit] 
+Solving,pub fn contradiction() -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn variable(self) -> VarRef;
+Solving,fn variable(self) -> VarRef 
+Solving,fn variable(self) -> VarRef 
+Solving,fn variable(self) -> VarRef 
+Solving,fn test_optional() 
+Solving,fn test_presence_relations() 
+Solving,fn domain_updates() 
+Solving,fn test_explanation() 
+Solving,fn explain(
+Solving,fn test_optional_propagation_error() 
+Solving,fn test_unsat_core_extraction_bool() 
+Solving,fn explain(
+Solving,fn test_unsat_core_extraction_int() 
+Solving,fn explain(
+Solving,pub fn new(lb: IntCst, ub: IntCst) -> IntDomain 
+Solving,pub fn size(&self) -> LongCst 
+Solving,pub fn is_bound(&self) -> bool 
+Solving,pub fn is_bound_to(&self, value: IntCst) -> bool 
+Solving,pub fn contains(&self, value: IntCst) -> bool 
+Solving,pub fn as_singleton(&self) -> Option<IntCst> 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn disjoint(&self, other: &IntDomain) -> bool 
+Solving,fn mul(self, rhs: Self) -> Self::Output 
+Solving,fn max(xs: &[IntCst; 4]) -> IntCst 
+Solving,fn min(xs: &[IntCst; 4]) -> IntCst 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(num: IntDomain, denom: IntCst) -> FixedDomain 
+Solving,pub fn is_bound(&self) -> bool 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn lb(&self) -> Rational 
+Solving,pub fn ub(&self) -> Rational 
+Solving,pub fn lb_f32(&self) -> f32 
+Solving,pub fn ub_f32(&self) -> f32 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn set_solution_witness(sol: &Domains) 
+Solving,pub fn remove_solution_witness() 
+Solving,pub fn on_drop_witness_cleaner() -> WitnessCleaner 
+Solving,fn drop(&mut self) 
+Solving,pub fn pruned_by_clause(clause: &Disjunction) -> bool 
+Solving,pub fn minimize_clause(clause: Disjunction, doms: &Domains, explainer: &mut impl Explainer) -> Disjunction 
+Solving,pub fn add(&mut self, l: Lit) 
+Solving,pub fn mark_redundant(&mut self, l: Lit) 
+Solving,pub fn mark_not_redundant(&mut self, l: Lit) 
+Solving,pub fn known_redundant(&self, l: Lit) -> bool 
+Solving,pub fn known_not_redundant(&self, l: Lit) -> bool 
+Solving,pub fn redundant_cached(&self, l: Lit) -> Option<bool> 
+Solving,pub fn check_redundant(
+Solving,pub fn shrink(
+Solving,pub fn inference(writer: ReasonerId, payload: impl Into<u32>) -> Self 
+Solving,fn from(c: Cause) -> Self 
+Solving,fn from(c: Cause) -> Self 
+Solving,pub fn as_external_inference(self) -> Option<InferenceCause> 
+Solving,pub fn new() -> Self 
+Solving,pub fn with_capacity(n: usize) -> Self 
+Solving,pub fn reserve(&mut self, additional: usize) 
+Solving,pub fn push(&mut self, lit: Lit) 
+Solving,pub fn extend(&mut self, additional_lits: impl IntoIterator<Item = Lit>) 
+Solving,pub fn pop(&mut self) -> Option<Lit> 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn literals(&self) -> &[Lit] 
+Solving,fn default() -> Self 
+Solving,fn from(lits: Vec<Lit>) -> Self 
+Solving,fn explain(&mut self, cause: InferenceCause, literal: Lit, model: &DomainsSnapshot, explanation: &mut Explanation);
+Solving,fn explain(&mut self, cause: InferenceCause, literal: Lit, model: &DomainsSnapshot, explanation: &mut Explanation) 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn push(&mut self, cause: EventIndex, lit: Lit) 
+Solving,pub fn pop(&mut self) -> Option<(Lit, EventIndex)> 
+Solving,pub fn clear(&mut self) 
+Solving,fn eq(&self, other: &Self) -> bool 
+Solving,fn cmp(&self, other: &Self) -> std::cmp::Ordering 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn contradiction() -> Self 
+Solving,pub fn new(mut literals: Lits) -> Self 
+Solving,pub fn from_vec(literals: Vec<Lit>) -> Self 
+Solving,pub fn from_slice(literals: impl Borrow<[Lit]>) -> Self 
+Solving,pub fn into_lits(self) -> Lits 
+Solving,pub fn new_non_tautological(literals: Lits) -> Option<Disjunction> 
+Solving,pub fn is_tautology(&self) -> bool 
+Solving,pub fn retain<F: FnMut(Lit) -> bool>(&mut self, f: F) 
+Solving,pub fn literals(&self) -> &[Lit] 
+Solving,pub fn iter(&self) -> impl Iterator<Item = Lit> + '_ 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn contains(&self, lit: Lit) -> bool 
+Solving,fn into_iter(self) -> Self::IntoIter 
+Solving,fn into_iter(self) -> Self::IntoIter 
+Solving,fn from(value: Lits) -> Self 
+Solving,fn from(value: &Lits) -> Self 
+Solving,fn from(literals: Vec<Lit>) -> Self 
+Solving,fn from(literals: &'a Vec<Lit>) -> Self 
+Solving,fn from(lits: [Lit; N]) -> Self 
+Solving,fn from(value: &[Lit]) -> Self 
+Solving,fn from(dis: &Disjunction) -> Self 
+Solving,fn borrow(&self) -> &[Lit] 
+Solving,fn as_ref(&self) -> &[Lit] 
+Solving,fn deref(&self) -> &Self::Target 
+Solving,pub fn new() -> Self 
+Solving,pub fn with_capacity(n: usize) -> Self 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn push(&mut self, lit: Lit) 
+Solving,pub fn build(self) -> Disjunction 
+Solving,fn default() -> Self 
+Solving,fn from(value: DisjunctionBuilder) -> Self 
+Solving,fn leq(var: VarRef, val: IntCst) -> Lit 
+Solving,fn geq(var: VarRef, val: IntCst) -> Lit 
+Solving,fn unordered(lits: &[Lit]) -> BTreeSet<Lit> 
+Solving,fn test_clause_construction() 
+Solving,fn check(input: Vec<Lit>, output: Vec<Lit>) 
+Solving,fn test_tautology() 
+Solving,fn test_minimality_coherence() 
+Solving,fn test_builder() 
+Solving,pub fn new() -> Self 
+Solving,pub fn with_capacity(capacity: usize) -> Self 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn into_sorted(self) -> StableLitSet 
+Solving,pub fn literals(&self) -> impl Iterator<Item = Lit> + '_ 
+Solving,pub fn contains(&self, elem: Lit) -> bool 
+Solving,pub fn insert(&mut self, lit: Lit) 
+Solving,pub fn remove(&mut self, rm: Lit, tautology: impl Fn(Lit) -> bool) 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn from(lits: T) -> Self 
+Solving,fn from(value: LitSet) -> Self 
+Solving,pub fn new(set: LitSet) -> Self 
+Solving,pub fn from_literals(iter: impl Iterator<Item = Lit>) -> Self 
+Solving,pub fn literals(&self) -> impl Iterator<Item = Lit> + '_ 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,fn simplify_conjunction(conjuncts: &mut Vec<Lit>) 
+Solving,fn from(lits: T) -> Self 
+Solving,fn try_from(value: &StableLitSet) -> Result<Self, Self::Error> 
+Solving,fn test_lit_set() 
+Solving,fn test_lit_set_removal() 
+Solving,fn test_simplify_conjunction() 
+Solving,fn test_equi(input: &[Lit], expected: &[Lit]) 
+Solving,pub fn new() -> Self 
+Solving,pub fn add_watch(&mut self, watcher: Watcher, literal: Lit) 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn remove_watch(&mut self, watcher: Watcher)
+Solving,pub fn is_watched_by(&self, watcher: Watcher, literal: Lit) -> bool
+Solving,pub fn watches_on(&self, literal: Lit) -> impl Iterator<Item = Watcher> + '_
+Solving,pub fn all_watches(&self) -> impl Iterator<Item = &Watch<Watcher>> + '_ 
+Solving,pub fn move_watches_to(&mut self, literal: Lit, out: &mut WatchSet<Watcher>) 
+Solving,fn default() -> Self 
+Solving,pub fn to_lit(&self, var_bound: SignedVar) -> Lit 
+Solving,pub fn new() -> Self 
+Solving,fn ensure_capacity(&mut self, var: SignedVar) 
+Solving,pub fn add_watch(&mut self, watcher: Watcher, literal: Lit) 
+Solving,pub fn is_watched_by(&self, literal: Lit, watcher: Watcher) -> bool
+Solving,pub fn remove_watch(&mut self, watcher: Watcher, literal: Lit)
+Solving,pub fn watches_on(&self, literal: Lit) -> impl Iterator<Item = Watcher> + '_
+Solving,pub fn watch_set(&self, svar: SignedVar) -> &WatchSet<Watcher> 
+Solving,pub fn move_watches_to(&mut self, literal: Lit, out: &mut WatchSet<Watcher>) 
+Solving,fn default() -> Self 
+Solving,fn test_watches() 
+Solving,pub fn empty() -> Self 
+Solving,pub fn add_implication(&mut self, from: Lit, to: Lit) 
+Solving,pub fn implies(&self, x: Lit, y: Lit) -> bool 
+Solving,pub fn direct_implications_of(&self, lit: Lit) -> impl Iterator<Item = Lit> + '_ 
+Solving,fn clone(&self) -> Self 
+Solving,fn default() -> Self 
+Solving,pub fn reachable(&self, source: Lit, target: Lit, edges: &Watches<Lit>) -> bool 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn new(source: Lit) -> Self 
+Solving,pub fn reachable(&mut self, target: Lit, edges: &Watches<Lit>) -> bool 
+Solving,fn test_implications() 
+Solving,fn test_implication_cycle() 
+Solving,fn new() -> Self 
+Solving,pub fn with_capacity(n: usize) -> Self 
+Solving,pub fn from_slice(lits: impl Borrow<[Lit]>) -> Self 
+Solving,pub fn from_vec(lits: Vec<Lit>) -> Lits 
+Solving,pub fn into_vec(self) -> Vec<Lit> 
+Solving,pub fn into_boxed_slice(self) -> Box<[Lit]> 
+Solving,pub fn push(&mut self, item: Lit) 
+Solving,pub fn extend_from_slice(&mut self, items: &[Lit]) 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn retain<F: FnMut(Lit) -> bool>(&mut self, mut f: F) 
+Solving,pub fn iter(&self) -> impl Iterator<Item = Lit> + '_ 
+Solving,pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Lit> + '_ 
+Solving,fn as_slice(&self) -> &[Lit] 
+Solving,fn as_ref(&self) -> &[Lit] 
+Solving,fn deref(&self) -> &Self::Target 
+Solving,fn as_mut(&mut self) -> &mut [Lit] 
+Solving,fn deref_mut(&mut self) -> &mut Self::Target 
+Solving,fn from_iter<T: IntoIterator<Item = Lit>>(iter: T) -> Self 
+Solving,fn into_iter(self) -> Self::IntoIter 
+Solving,fn into_iter(self) -> Self::IntoIter 
+Solving,fn test_lits_size() 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn variable(self) -> VarRef 
+Solving,pub fn unpack(self) -> (VarRef, Relation, IntCst) 
+Solving,pub fn leq(var: impl Into<SignedVar>, val: IntCst) -> Lit 
+Solving,pub fn lt(var: impl Into<SignedVar>, val: IntCst) -> Lit 
+Solving,pub fn geq(var: impl Into<SignedVar>, val: IntCst) -> Lit 
+Solving,pub fn gt(var: impl Into<SignedVar>, val: IntCst) -> Lit 
+Solving,pub fn entails(self, other: Lit) -> bool 
+Solving,pub fn lexical_cmp(&self, other: &Lit) -> Ordering 
+Solving,pub fn tautological(self) -> bool 
+Solving,pub fn absurd(self) -> bool 
+Solving,fn not(self) -> Self::Output 
+Solving,fn from(b: bool) -> Self 
+Solving,fn try_from(value: Lit) -> Result<Self, Self::Error> 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn leq(var: VarRef, val: IntCst) -> Lit 
+Solving,fn geq(var: VarRef, val: IntCst) -> Lit 
+Solving,fn test_entailments() 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn leq(self, i: IntCst) -> Lit 
+Solving,pub fn lt(self, i: IntCst) -> Lit 
+Solving,pub fn geq(self, i: IntCst) -> Lit 
+Solving,pub fn gt(self, i: IntCst) -> Lit 
+Solving,pub fn variable(self) -> VarRef 
+Solving,pub fn leq(self, ub: IntCst) -> Lit 
+Solving,pub fn geq(self, lb: IntCst) -> Lit 
+Solving,fn neg(self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn from(vb: SignedVar) -> Self 
+Solving,fn from(u: u32) -> Self 
+Solving,fn from(vb: SignedVar) -> Self 
+Solving,fn from(u: usize) -> Self 
+Solving,fn from(value: VarRef) -> Self 
+Solving,pub fn from_string(input: impl Into<String>) -> Input 
+Solving,pub fn from_file(file: &std::path::Path) -> std::result::Result<Input, std::io::Error> 
+Solving,fn indices(&self, span: Span) -> Option<(usize, usize)> 
+Solving,pub fn substring(&self, span: Span) -> &str 
+Solving,pub fn underlined_position(&self, pos: Pos) -> impl std::fmt::Display + '_ 
+Solving,pub fn underlined(&self, span: Span) -> impl std::fmt::Display + '_ 
+Solving,fn from(s: &str) -> Self 
+Solving,fn try_from(path: &std::path::Path) -> Result<Self, Self::Error> 
+Solving,pub fn new(start: Pos, end: Pos) -> Span 
+Solving,pub fn point(position: Pos) -> Span 
+Solving,pub fn new(source: &Arc<Input>, span: Span) -> Loc 
+Solving,pub fn invalid(self, error: impl Into<String>) -> ErrLoc 
+Solving,pub fn end(self) -> Loc 
+Solving,pub fn span(self) -> Span 
+Solving,pub fn underlined(&self) -> impl Display + '_ 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn with_error(mut self, inline_message: impl Into<String>) -> ErrLoc 
+Solving,pub fn failed<T>(self) -> std::result::Result<T, ErrLoc> 
+Solving,fn from(e: String) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn ctx(self, error_context: impl Display) -> std::result::Result<T, ErrLoc>;
+Solving,fn ctx(self, error_context: impl Display) -> Result<T, ErrLoc> 
+Solving,pub fn new(s: impl Into<String>) -> Sym 
+Solving,pub fn with_source(s: impl Into<String>, display: Option<String>, source: Loc) -> Sym 
+Solving,pub fn canonical_str(&self) -> &str 
+Solving,pub fn canonical_string(&self) -> String 
+Solving,pub fn loc(&self) -> Loc 
+Solving,pub fn invalid(&self, error: impl Into<String>) -> ErrLoc 
+Solving,fn eq(&self, other: &Self) -> bool 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> 
+Solving,fn cmp(&self, other: &Self) -> std::cmp::Ordering 
+Solving,fn as_ref(&self) -> &str 
+Solving,fn borrow(&self) -> &str 
+Solving,fn borrow(&self) -> &String 
+Solving,fn hash<H: std::hash::Hasher>(&self, state: &mut H) 
+Solving,fn from(s: &str) -> Self 
+Solving,fn from(s: &String) -> Self 
+Solving,fn from(s: String) -> Self 
+Solving,fn from(s: &Sym) -> Self 
+Solving,fn from(s: &Sym) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn now() -> Self 
+Solving,pub fn elapsed(&self) -> CycleCount 
+Solving,pub fn zero() -> Self 
+Solving,pub fn count(&self) -> Option<u64> 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn add(self, _: Self) -> Self::Output 
+Solving,fn add_assign(&mut self, _: Self) 
+Solving,fn div(self, _: Self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> Result 
+Solving,pub fn now() -> Self 
+Solving,pub fn elapsed(&self) -> CycleCount 
+Solving,pub fn zero() -> Self 
+Solving,pub fn count(&self) -> Option<u64> 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn add(self, other: Self) -> Self::Output 
+Solving,fn add_assign(&mut self, other: Self) 
+Solving,fn div(self, other: Self) -> Self::Output 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> Result 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result 
+Solving,pub fn disp_iter<T: Display>(f: &mut Formatter<'_>, iterable: &[T], sep: &str) -> Result<(), Error> 
+Solving,pub fn enumerate<Item, Iter: Iterator<Item = Item> + Clone>(
+Solving,pub fn new(instances: Vec<Iterable>) -> Self 
+Solving,fn advance(&mut self) 
+Solving,fn get(&self) -> Option<&Self::Item> 
+Solving,fn generation() 
+Solving,pub fn add_tautology(&mut self, lit: Lit) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut Formatter) -> Result<(), Error> 
+Solving,pub fn new(params: ClausesParams) -> ClauseDb 
+Solving,fn is_the_tautological_clause(&self, clause: &Clause) -> bool 
+Solving,pub fn add_clause(&mut self, cl: &[Lit], scope: Option<Lit>, learnt: bool) -> ClauseId 
+Solving,pub fn is_learnt(&self, clause: ClauseId) -> bool 
+Solving,pub fn num_clauses(&self) -> usize 
+Solving,pub fn num_learnt(&self) -> usize 
+Solving,pub fn num_removable(&self) -> usize 
+Solving,pub fn all_clauses(&self) -> impl Iterator<Item = ClauseId> + '_ 
+Solving,pub fn set_lbd(&mut self, clause: ClauseId, lbd: u32) 
+Solving,pub fn get_lbd(&self, clause: ClauseId) -> Option<u32> 
+Solving,pub fn bump_activity(&mut self, cl: ClauseId) 
+Solving,pub fn decay_activities(&mut self) 
+Solving,fn rescale_activities(&mut self) 
+Solving,pub fn reduce_db<F: Fn(ClauseId) -> bool>(&mut self, locked: F, remove_watch: &mut impl FnMut(ClauseId, Lit)) 
+Solving,pub fn is_in_db(&self, clause: ClauseId) -> bool 
+Solving,fn index(&self, k: ClauseId) -> &Self::Output 
+Solving,fn index_mut(&mut self, k: ClauseId) -> &mut Self::Output 
+Solving,pub fn new() -> Self 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn get(&self, clause_id: ClauseId) -> &Clause 
+Solving,pub fn push(&mut self, clause: &[Lit], scope: Option<Lit>) -> ClauseId 
+Solving,pub fn set(&mut self, clause_id: ClauseId, clause: &[Lit], scope: Option<Lit>) 
+Solving,fn default() -> Self 
+Solving,fn clone(&self) -> Self 
+Solving,fn index(&self, k: ClauseId) -> &Self::Output 
+Solving,fn index_mut(&mut self, k: ClauseId) -> &mut Self::Output 
+Solving,pub fn unwatched(&self, index: usize) -> Lit 
+Solving,pub fn unwatched_lits(&self) -> &[Lit] 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn has_single_literal(&self) -> bool 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn swap_watches(&mut self) 
+Solving,pub fn set_watch1(&mut self, unwatched_index: usize) 
+Solving,pub fn set_watch2(&mut self, unwatched_index: usize) 
+Solving,pub fn literals(&self) -> impl Iterator<Item = Lit> + '_ 
+Solving,pub fn move_watches_front(
+Solving,fn fmt(&self, f: &mut Formatter) -> Result<(), Error> 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn next(&mut self) -> Option<Self::Item> 
+Solving,fn into_iter(self) -> Self::IntoIter 
+Solving,pub fn new() -> Self 
+Solving,pub fn contains(&self, clause: ClauseId) -> bool 
+Solving,pub fn num_locks(&self) -> usize 
+Solving,pub fn lock(&mut self, clause: ClauseId) 
+Solving,pub fn unlock(&mut self, clause: ClauseId) 
+Solving,fn default() -> Self 
+Solving,fn default() -> Self 
+Solving,fn default() -> Self 
+Solving,pub fn new(identity: ReasonerId) -> SatSolver 
+Solving,pub fn add_clause(&mut self, clause: &[Lit]) -> ClauseId 
+Solving,pub fn add_clause_scoped(&mut self, clause: &[Lit], scope: Lit) -> ClauseId 
+Solving,pub fn add_implication(&mut self, from: Lit, to: Lit) -> ClauseId 
+Solving,pub fn add_forgettable_clause(&mut self, clause: &[Lit]) 
+Solving,pub fn add_learnt_clause(&mut self, clause: &[Lit]) 
+Solving,fn add_clause_impl(&mut self, clause: &[Lit], scope: Option<Lit>, learnt: bool) -> ClauseId 
+Solving,fn process_arbitrary_clause(&mut self, cl_id: ClauseId, model: &mut Domains) -> Option<ClauseId> 
+Solving,fn process_violated(&mut self, cl_id: ClauseId, model: &mut Domains) -> Option<ClauseId> 
+Solving,fn move_watches_front(&mut self, cl_id: ClauseId, model: &Domains) 
+Solving,fn process_unit_clause(&mut self, cl_id: ClauseId, model: &mut Domains) 
+Solving,pub fn propagate(&mut self, model: &mut Domains) -> Result<(), Explanation> 
+Solving,fn propagate_impl(&mut self, model: &mut Domains) -> Result<(), ClauseId> 
+Solving,fn propagate_enqueued(&mut self, model: &mut Domains) -> Result<(), ClauseId> 
+Solving,fn propagate_clause(&mut self, clause_id: ClauseId, p: Lit, model: &mut Domains) -> bool 
+Solving,fn set_from_unit_propagation(&mut self, literal: Lit, propagating_clause: ClauseId, model: &mut Domains) 
+Solving,fn lbd(&mut self, asserted_literal: Lit, clause: ClauseId, model: &Domains) -> u32 
+Solving,fn lock(&mut self, clause: ClauseId) 
+Solving,fn set_watch_on_first_literals(&mut self, cl_id: ClauseId) 
+Solving,fn assert_watches_valid(&self, cl_id: ClauseId, state: &Domains) -> bool 
+Solving,pub fn explain(&mut self, explained: Lit, cause: u32, model: &DomainsSnapshot, explanation: &mut Explanation) 
+Solving,fn scale_database(&mut self) 
+Solving,pub fn print_stats(&self) 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,fn test_propagation_simple() 
+Solving,fn test_propagation_complex() 
+Solving,fn test_propagation_failure() 
+Solving,fn test_online_clause_insertion() 
+Solving,fn test_int_propagation() 
+Solving,fn test_clauses_with_optionals() 
+Solving,fn explain(
+Solving,fn check_explanation(m: &Model, sat: &mut SatSolver, lit: Lit, expected: impl Seq<Lit>) 
+Solving,pub fn new(succ: Node, label: Lit, active: Lit) -> OutEdge 
+Solving,pub fn new(pred: Node, label: Lit, active: Lit) -> InEdge 
+Solving,pub fn id(&self) -> DirEdgeId 
+Solving,fn from(v: VarRef) -> Self 
+Solving,fn from(v: IntCst) -> Self 
+Solving,fn var_of(n: Node) -> VarRef 
+Solving,fn from(value: InferenceCause) -> Self 
+Solving,fn from(value: u32) -> Self 
+Solving,fn label(&self, src: impl Into<Node>, tgt: impl Into<Node>) -> Lit 
+Solving,fn active(&self, src: impl Into<Node>, tgt: impl Into<Node>) -> Lit 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn add_assign(&mut self, rhs: Self) 
+Solving,pub fn new(id: u16) -> DenseEqTheory 
+Solving,pub fn variables(&self) -> impl Iterator<Item = VarRef> + '_ 
+Solving,fn update_graph(&mut self, event: Lit, domains: &Domains) 
+Solving,fn add_dir_edge(&mut self, src: Node, tgt: Node, label: Lit, active: Lit, model: &mut impl ReifyEq) 
+Solving,pub fn add_node(&mut self, v: impl Into<Node>, model: &mut impl ReifyEq) 
+Solving,fn try_enable_edge(&mut self, e: DirEdge, domains: &Domains) -> bool 
+Solving,fn propagate_new_edge(&mut self, e: DirEdge, domains: &mut Domains) -> Result<(), InvalidUpdate> 
+Solving,fn set_edge_label(
+Solving,pub fn propagate_domain_event(
+Solving,pub fn add_edge(&mut self, a: impl Into<Node>, b: impl Into<Node>, model: &mut impl ReifyEq) -> Lit 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, domains: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,fn domains(&self) -> &Domains;
+Solving,fn domain(&self, a: Node) -> (IntCst, IntCst);
+Solving,fn reify_eq(&mut self, a: Node, b: Node) -> Lit;
+Solving,fn presence_implication(&self, a: VarRef, b: VarRef) -> Lit;
+Solving,fn n_presence_implication(&self, a: Node, b: Node) -> Lit 
+Solving,fn domains(&self) -> &Domains 
+Solving,fn domain(&self, a: Node) -> (IntCst, IntCst) 
+Solving,fn reify_eq(&mut self, a: Node, b: Node) -> Lit 
+Solving,fn presence_implication(&self, a: VarRef, b: VarRef) -> Lit 
+Solving,pub fn new(a: impl Into<Node>, b: impl Into<Node>) -> Pair 
+Solving,pub fn init(vars: &[VarRef], domains: &mut Domains) -> Eqs 
+Solving,fn get(&self, a: impl Into<Node>, b: impl Into<Node>) -> Lit 
+Solving,fn reify_eq(&mut self, a: Node, b: Node) -> Lit 
+Solving,fn presence_implication(&self, _a: VarRef, _b: VarRef) -> Lit 
+Solving,fn domain(&self, a: Node) -> (IntCst, IntCst) 
+Solving,fn domains(&self) -> &Domains 
+Solving,fn test_manual_propagation() 
+Solving,fn test_automated_propagation() 
+Solving,fn from(value: Vec<(S, Vec<S>)>) -> Self 
+Solving,fn test_model() 
+Solving,fn random_solves<S: Label>(model: &Model<S>, num_solves: u64, mut expected_result: Option<bool>) 
+Solving,fn random_model(seed: u64) -> Model<String> 
+Solving,fn random_problems() 
+Solving,fn test_inference_cause_conversion() 
+Solving,pub fn new() -> Self 
+Solving,pub fn min(&self) -> IntCst 
+Solving,pub fn max(&self) -> IntCst 
+Solving,pub fn bounds(&self) -> RangeInclusive<IntCst> 
+Solving,pub fn add_value(&mut self, value: IntCst, lit: Lit) 
+Solving,pub fn get(&self, value: IntCst) -> Option<Lit> 
+Solving,fn values(&self, first: IntCst, last: IntCst) -> &[Lit] 
+Solving,pub fn has_domain(&self, var: VarRef) -> bool 
+Solving,pub fn add_value(&mut self, var: VarRef, value: IntCst, lit: Lit) 
+Solving,pub fn eq_watches(&self, l: Lit) -> impl Iterator<Item = (VarRef, IntCst)> + '_ 
+Solving,pub fn neq_watches(&self, l: Lit) -> impl Iterator<Item = (VarRef, IntCst)> + '_ 
+Solving,pub fn signed_value(&self, v: SignedVar, value: IntCst) -> Option<Lit> 
+Solving,pub fn value(&self, v: VarRef, value: IntCst) -> Option<Lit> 
+Solving,pub fn values(&self, v: SignedVar, first: IntCst, last: IntCst) -> &[Lit] 
+Solving,pub fn add_edge(&mut self, a: VarRef, b: VarRef, model: &mut impl ReifyEq) -> Lit 
+Solving,pub fn add_val_edge(&mut self, var: VarRef, val: IntCst, model: &mut impl ReifyEq) -> Lit 
+Solving,pub fn parts(&self) -> impl Iterator<Item = &DenseEqTheory> + '_ 
+Solving,pub fn parts_mut(&mut self) -> impl Iterator<Item = &mut DenseEqTheory> + '_ 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,pub fn new(source: Timepoint, target: Timepoint, weight: W) -> Edge 
+Solving,pub fn negated(&self) -> Self 
+Solving,pub fn is_dynamic(&self) -> bool 
+Solving,pub fn is_currently_active(&self) -> bool 
+Solving,fn from(e: PropagatorId) -> Self 
+Solving,fn from(u: usize) -> Self 
+Solving,fn from(e: PropagatorId) -> Self 
+Solving,fn from(u: u32) -> Self 
+Solving,fn vertices(&self) -> impl Iterator<Item = V> + '_ 
+Solving,fn edge(&self, e: E) -> Edge<V, E> 
+Solving,fn outgoing(&self, src: V) -> impl Iterator<Item = Edge<V, E>> + '_ 
+Solving,fn incoming(&self, src: V) -> impl Iterator<Item = Edge<V, E>> + '_ 
+Solving,fn potential(&self, v: V) -> IntCst 
+Solving,fn vertices(&self) -> impl Iterator<Item = V> + '_;
+Solving,fn outgoing(&self, v: V) -> impl Iterator<Item = Edge<V, E>> + '_;
+Solving,fn incoming(&self, v: V) -> impl Iterator<Item = Edge<V, E>> + '_;
+Solving,fn potential(&self, v: V) -> IntCst;
+Solving,fn edge(&self, e: E) -> Edge<V, E>;
+Solving,fn edges(&self) -> impl Iterator<Item = Edge<V, E>> + '_ 
+Solving,fn reversed(&self) -> impl Graph<V, E> + '_
+Solving,fn relevants(&self, new_edge: &Edge<V, E>) -> Vec<(V, LongCst)>
+Solving,fn relevants_no_alloc(
+Solving,fn is_potential_valid(&self) -> bool 
+Solving,fn shortest_distance(&self, src: V, tgt: V) -> Option<IntCst>
+Solving,fn shortest_path(&self, src: V, tgt: V) -> Option<Vec<E>>
+Solving,fn ssp(&self, src: V, tgt: V) -> Option<(IntCst, Predecessors<V, E>)>
+Solving,fn updated_on_addition(&self, source: V, target: V, weight: IntCst, id: E) -> PotentialUpdate<V>
+Solving,fn updated_on_addition_no_alloc(
+Solving,pub fn new() -> Self 
+Solving,pub fn insert(&mut self, v: V, lbl: Lbl) 
+Solving,pub fn best(&self, v: V) -> Option<&Lbl> 
+Solving,pub fn pop(&mut self) -> Option<(V, Lbl)> 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn new(dist: LongCst, relevant: bool) -> Self 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn cmp(&self, other: &Self) -> Ordering 
+Solving,pub fn new(src: V, tgt: V, label: L, id: E) -> Self 
+Solving,pub fn reverse(self) -> Self 
+Solving,pub fn new() -> Self 
+Solving,fn buiild_prefix_lookup(&mut self) 
+Solving,pub fn get_prefix(&self, v: V) -> Option<LongCst> 
+Solving,pub fn clear(&mut self) 
+Solving,fn default() -> Self 
+Solving,pub fn set(&mut self, v: V, e: Option<E>) 
+Solving,pub fn is_set(&self, v: V) -> bool 
+Solving,pub fn get(&self, v: V) -> Option<E> 
+Solving,pub fn new(stn: &'a StnTheory, doms: &'a Domains) -> Self 
+Solving,pub fn new_excluding(stn: &'a StnTheory, doms: &'a Domains, excluded: PropagatorId) -> Self 
+Solving,fn vertices(&self) -> impl Iterator<Item = SignedVar> + '_ 
+Solving,fn edge(&self, e: PropagatorId) -> Edge<SignedVar, PropagatorId> 
+Solving,fn outgoing(&self, v: SignedVar) -> impl Iterator<Item = StnEdge> + '_ 
+Solving,fn incoming(&self, v: SignedVar) -> impl Iterator<Item = StnEdge> + '_ 
+Solving,fn potential(&self, v: SignedVar) -> IntCst 
+Solving,pub fn new(stn: &'a StnTheory, doms: &'a DomainsSnapshot<'a>, ignore_after: EventIndex) -> Self 
+Solving,fn vertices(&self) -> impl Iterator<Item = SignedVar> + '_ 
+Solving,fn edge(&self, e: PropagatorId) -> Edge<SignedVar, PropagatorId> 
+Solving,fn outgoing(&self, v: SignedVar) -> impl Iterator<Item = StnEdge> + '_ 
+Solving,fn incoming(&self, v: SignedVar) -> impl Iterator<Item = StnEdge> + '_ 
+Solving,fn potential(&self, v: SignedVar) -> IntCst 
+Solving,pub fn new(src: V, tgt: V, weight: IntCst) -> Self 
+Solving,pub fn new(edges: Vec<TestEdge>) -> Option<Self> 
+Solving,pub fn pop_edge(&self) -> (Edge<V, usize>, EdgeList) 
+Solving,fn has_negative_cycle(edges: &[TestEdge]) -> bool 
+Solving,fn potential(edges: &[TestEdge]) -> Option<HashMap<V, IntCst>> 
+Solving,fn vertices(&self) -> impl Iterator<Item = V> + '_ 
+Solving,fn edge(&self, e: usize) -> Edge<V, usize> 
+Solving,fn outgoing(&self, v: V) -> impl Iterator<Item = Edge<V, usize>> + '_ 
+Solving,fn incoming(&self, v: V) -> impl Iterator<Item = Edge<V, usize>> + '_ 
+Solving,fn potential(&self, v: V) -> IntCst 
+Solving,fn gen_graph(seed: u64) -> EdgeList 
+Solving,fn test_distances() 
+Solving,fn test_distances_negative() 
+Solving,fn test_potentials() 
+Solving,fn test_relevance() 
+Solving,fn test_graph_updates() 
+Solving,fn test_graph_path() 
+Solving,pub fn process_bound_changes(
+Solving,pub fn clear(&mut self) 
+Solving,pub fn add_modified_bound(&mut self, v: SignedVar, previous_ub: IntCst, ub: IntCst, is_from_self: bool) 
+Solving,pub fn run(
+Solving,pub fn clear(&mut self) 
+Solving,pub fn insert_init(&mut self, v: SignedVar, cost: IntCst) 
+Solving,pub fn update(&mut self, v: SignedVar, cost: IntCst, pred: PropagatorId) 
+Solving,pub fn pop(&mut self) -> Option<(SignedVar, IntCst)> 
+Solving,pub fn new(active: Lit, valid: Lit) -> Enabler 
+Solving,pub fn new() -> ConstraintDb 
+Solving,pub fn num_propagator_groups(&self) -> usize 
+Solving,pub fn propagators(&self) -> impl Iterator<Item = (PropagatorId, &PropagatorGroup)> 
+Solving,pub fn is_vertex(&self, v: SignedVar) -> bool 
+Solving,pub fn next_new_constraint(&mut self) -> Option<PropagatorId> 
+Solving,pub fn add_propagator_enabler(&mut self, propagator: PropagatorId, enabler: Enabler) 
+Solving,pub fn potential_out_edges(&self, source: SignedVar) -> &[PropagatorTarget] 
+Solving,pub fn add_propagator(&mut self, prop: Propagator) -> (PropagatorId, PropagatorIntegration) 
+Solving,pub fn enabled_by(&self, literal: Lit) -> impl Iterator<Item = (Enabler, PropagatorId)> + '_ 
+Solving,fn index(&self, index: PropagatorId) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: PropagatorId) -> &mut Self::Output 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,pub fn new() -> Self 
+Solving,pub fn new_with_config(config: StnConfig) -> Self 
+Solving,pub fn add_timepoint(&mut self, lb: W, ub: W) -> Timepoint 
+Solving,pub fn set_lb(&mut self, timepoint: Timepoint, lb: W) 
+Solving,pub fn set_ub(&mut self, timepoint: Timepoint, ub: W) 
+Solving,pub fn add_edge(&mut self, source: Timepoint, target: Timepoint, weight: W) 
+Solving,pub fn add_dynamic_edge(&mut self, source: Timepoint, target: Timepoint, ub_var: SignedVar, ub_factor: IntCst) 
+Solving,pub fn add_inactive_edge(&mut self, source: Timepoint, target: Timepoint, weight: W) -> Lit 
+Solving,pub fn add_delay(&mut self, a: impl Into<Timepoint>, b: impl Into<Timepoint>, delay: W) 
+Solving,fn get_conjunctive_scope(&mut self, a: Timepoint, b: Timepoint) -> Lit 
+Solving,pub fn mark_active(&mut self, edge: Lit) 
+Solving,pub fn propagate_all(&mut self) -> Result<(), Contradiction> 
+Solving,pub fn set_backtrack_point(&mut self) 
+Solving,pub fn undo_to_last_backtrack_point(&mut self) 
+Solving,fn explain(
+Solving,fn explain(
+Solving,fn default() -> Self 
+Solving,pub fn bounds(&self) -> bool 
+Solving,pub fn edges(&self) -> bool 
+Solving,fn from_str(s: &str) -> Result<Self, Self::Err> 
+Solving,fn default() -> Self 
+Solving,pub fn new(writer_id: ReasonerId) -> Self 
+Solving,pub fn inference(&self, cause: C) -> Cause 
+Solving,fn from(enc: u32) -> Self 
+Solving,fn from(cause: ModelUpdateCause) -> Self 
+Solving,pub fn new(config: StnConfig) -> Self 
+Solving,pub fn num_nodes(&self) -> u32 
+Solving,pub fn reserve_timepoint(&mut self) 
+Solving,pub fn add_half_reified_edge(
+Solving,pub fn add_reified_edge(
+Solving,pub fn add_dynamic_edge(
+Solving,fn record_propagator(&mut self, prop: Propagator, domains: &Domains) -> PropagatorId 
+Solving,fn build_contradiction(&self, culprits: &[PropagatorId], model: &Domains) -> Contradiction 
+Solving,fn explain_bound_propagation(
+Solving,pub fn propagate_all(&mut self, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn assert_fully_bound_propagated(&self, doms: &Domains) 
+Solving,pub fn set_backtrack_point(&mut self) -> BacktrackLevel 
+Solving,pub fn undo_to_last_backtrack_point(&mut self) -> Option<BacktrackLevel> 
+Solving,fn active(&self, e: PropagatorId) -> bool 
+Solving,fn propagate_new_edge(&mut self, new_edge: PropagatorId, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn extract_cycle(&self, propagator_id: PropagatorId, model: &DomainsSnapshot, expl: &mut Explanation) 
+Solving,pub fn print_stats(&self) 
+Solving,fn theory_propagate_edge(&mut self, edge: PropagatorId, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, model: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn test_propagation() 
+Solving,fn test_backtracking() 
+Solving,fn test_explanation() -> Result<(), Contradiction> 
+Solving,fn test_optionals() -> Result<(), Contradiction> 
+Solving,fn test_optional_chain() -> Result<(), Contradiction> 
+Solving,fn test_theory_propagation_edges_simple() -> Result<(), Contradiction> 
+Solving,fn test_negative_self_loop() 
+Solving,fn test_theory_propagation_edges() -> Result<(), Contradiction> 
+Solving,fn test_theory_propagation_bounds() -> Result<(), Contradiction> 
+Solving,fn test_dynamic_edges() -> Result<(), Contradiction> 
+Solving,pub fn cause(&self, cause: impl Into<u32>) -> Cause 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn identity(&self) -> ReasonerId;
+Solving,fn propagate(&mut self, model: &mut Domains) -> Result<(), Contradiction>;
+Solving,fn explain(
+Solving,fn print_stats(&self);
+Solving,fn clone_box(&self) -> Box<dyn Theory>;
+Solving,fn from(empty: InvalidUpdate) -> Self 
+Solving,fn from(e: Explanation) -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn reasoner(&self, id: ReasonerId) -> &dyn Theory 
+Solving,pub fn reasoner_mut(&mut self, id: ReasonerId) -> &mut dyn Theory 
+Solving,pub fn writers(&self) -> &'static [ReasonerId] 
+Solving,pub fn theories(&self) -> impl Iterator<Item = (ReasonerId, &dyn Theory)> + '_ 
+Solving,fn default() -> Self 
+Solving,fn explain(&mut self, cause: InferenceCause, literal: Lit, model: &DomainsSnapshot, explanation: &mut Explanation) 
+Solving,fn setup(&self, id: PropagatorId, context: &mut Watches);
+Solving,fn propagate(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction>;
+Solving,fn explain(&self, literal: Lit, state: &DomainsSnapshot, out_explanation: &mut Explanation);
+Solving,fn clone_box(&self) -> Box<dyn Propagator>;
+Solving,fn explain(&mut self, cause: InferenceCause, literal: Lit, model: &DomainsSnapshot, explanation: &mut Explanation) 
+Solving,fn clone(&self) -> Self 
+Solving,fn from(propagator: T) -> Self 
+Solving,fn setup(&self, id: PropagatorId, context: &mut Watches) 
+Solving,fn propagate(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction> 
+Solving,fn explain(&self, literal: Lit, state: &DomainsSnapshot, out_explanation: &mut Explanation) 
+Solving,fn clone_box(&self) -> Box<dyn Propagator> 
+Solving,fn implies_problems(n: usize) -> Vec<(Domains, ImpliesProp)> 
+Solving,fn test_explanations() 
+Solving,fn explain(
+Solving,fn explainer<'a>(prop: &'a dyn Propagator) -> PropExplainer<'a> 
+Solving,pub fn test_explanations(d: &Domains, propagator: &dyn Propagator, check_minimality: bool) 
+Solving,fn pick_decisions(d: &Domains, min: usize, max: usize, rng: &mut SmallRng) -> Vec<Lit> 
+Solving,pub fn check_events(s: &Domains, explainer: &dyn Propagator, check_minimality: bool) 
+Solving,pub fn check_event_explanation(s: &Domains, ev: &Event, prop: &dyn Propagator, check_minimality: bool) 
+Solving,pub fn check_explanation_minimality(
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(factor: IntCst, var: VarRef) -> Self 
+Solving,fn is_constant(&self) -> bool 
+Solving,fn get_lower_bound(&self, domains: &Domains) -> LongCst 
+Solving,fn get_upper_bound(&self, domains: &Domains) -> LongCst 
+Solving,fn set_ub(&self, ub: LongCst, domains: &mut Domains, cause: Cause) -> Result<bool, InvalidUpdate> 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,fn new(elem: &'a SumElem, domains: &'a DomainsSnapshot) -> Option<Self> 
+Solving,fn event(&self) -> &Event 
+Solving,fn literal(&self) -> Lit 
+Solving,fn lb(&self) -> LongCst 
+Solving,fn previous_lb(&self) -> LongCst 
+Solving,fn into_previous(self) -> Option<Self> 
+Solving,fn eq(&self, other: &Self) -> bool 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn cmp(&self, other: &Self) -> Ordering 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn print(&self, domains: &Domains) 
+Solving,fn setup(&self, id: PropagatorId, context: &mut Watches) 
+Solving,fn propagate(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction> 
+Solving,fn explain(&self, literal: Lit, domains: &DomainsSnapshot, out_explanation: &mut Explanation) 
+Solving,fn clone_box(&self) -> Box<dyn Propagator> 
+Solving,fn var(lb: IntCst, ub: IntCst, factor: IntCst, dom: &mut Domains) -> SumElem 
+Solving,fn sum(elements: Vec<SumElem>, ub: IntCst, active: Lit) -> LinearSumLeq 
+Solving,fn check_bounds(e: &SumElem, d: &Domains, lb: IntCst, ub: IntCst) 
+Solving,fn check_bounds_var(v: VarRef, d: &Domains, lb: IntCst, ub: IntCst) 
+Solving,fn test_ub_setter_var() 
+Solving,fn test_ub_setter_cst() 
+Solving,fn test_single_var_constraint() 
+Solving,fn test_multi_var_constraint() 
+Solving,fn test_neg_factor_constraint() 
+Solving,fn test_explanation_present_impossible_sum() 
+Solving,fn gen_problems() -> Vec<(Domains, LinearSumLeq)> 
+Solving,fn test_explanations() 
+Solving,fn setup(&self, id: PropagatorId, context: &mut Watches) 
+Solving,fn propagate(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction> 
+Solving,fn explain(&self, literal: Lit, state: &DomainsSnapshot, out_explanation: &mut Explanation) 
+Solving,fn clone_box(&self) -> Box<dyn Propagator> 
+Solving,fn propagate_iteration(&self, domains: &mut Domains, cause: Cause) -> Result<bool, Contradiction> 
+Solving,fn propagate_forward(&self, domains: &mut Domains, cause: Cause) -> Result<bool, Contradiction> 
+Solving,fn propagate_backward(
+Solving,fn propagate_signs(&self, domains: &mut Domains, cause: Cause) -> Result<bool, Contradiction> 
+Solving,fn propagate_xyx(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction> 
+Solving,fn trivially_inconsistent(&self, domains: &Domains) -> bool 
+Solving,fn is_square(&self) -> bool 
+Solving,fn xyx_fact(&self) -> Option<VarRef> 
+Solving,fn ub_literal(&self, v: VarRef) -> Lit 
+Solving,fn lb_literal(&self, v: VarRef) -> Lit 
+Solving,fn explain_var(&self, v: VarRef, out_explanation: &mut Explanation) 
+Solving,fn set_bounds(&mut self, v: VarRef, (lb, ub): (IntCst, IntCst), cause: Cause) -> Result<bool, Contradiction> 
+Solving,fn div_floor_ceil(x: IntCst, y: IntCst) -> (IntCst, IntCst) 
+Solving,fn check_bounds(v: VarRef, d: &Domains, expected_bounds: (IntCst, IntCst)) 
+Solving,fn check_in_bounds(d: &Domains, var: VarRef, val: IntCst) 
+Solving,fn check_explanations(prop: &Mul, lit: Lit, d: &Domains, expected: Explanation) 
+Solving,fn print_domains(d: &Domains, prop: &Mul) 
+Solving,fn gen_problems(n: u32, max: u32, always_active: bool) -> Vec<(Domains, Mul, (IntCst, IntCst, IntCst))> 
+Solving,fn gen_square_problems(n: u32, max: u32, always_active: bool) -> Vec<(Domains, Mul, (IntCst, IntCst))> 
+Solving,fn test_propagation(
+Solving,fn test_square_propagation(
+Solving,fn test_xyx_propagation(
+Solving,fn test_xyx_explanation(prod_bounds: (IntCst, IntCst), fact_bounds: (IntCst, IntCst)) 
+Solving,fn test_propagations() 
+Solving,fn test_square_propagations() 
+Solving,fn test_xyx_propagations() 
+Solving,fn test_xyx_explanations() 
+Solving,fn test_propagation_random() 
+Solving,fn test_explanations_random() 
+Solving,pub fn new(var: SignedVar, cst: IntCst, presence: Lit) -> Self 
+Solving,fn setup(&self, id: PropagatorId, context: &mut Watches) 
+Solving,fn propagate(&self, domains: &mut Domains, cause: Cause) -> Result<(), Contradiction> 
+Solving,fn explain(&self, literal: Lit, domains: &DomainsSnapshot, out_explanation: &mut Explanation) 
+Solving,fn clone_box(&self) -> Box<dyn Propagator> 
+Solving,fn check_bounds(d: &Domains, v: VarRef, lb: IntCst, ub: IntCst) 
+Solving,fn test_ub_setter_var() 
+Solving,pub fn add_watch(&mut self, watched: VarRef, propagator_id: PropagatorId) 
+Solving,pub fn add_ub_watch(&mut self, watched: impl Into<SignedVar>, propagator_id: PropagatorId) 
+Solving,pub fn add_lb_watch(&mut self, watched: impl Into<SignedVar>, propagator_id: PropagatorId) 
+Solving,pub fn add_lit_watch(&mut self, watched: impl Into<Lit>, propagator_id: PropagatorId) 
+Solving,fn get_ub_watches(&self, var: impl Into<SignedVar>) -> &[PropagatorId] 
+Solving,fn default() -> Self 
+Solving,pub fn new(id: ReasonerId) -> Cp 
+Solving,pub fn add_linear_constraint(&mut self, leq: &NFLinearLeq, doms: &Domains) 
+Solving,pub fn add_half_reif_linear_constraint(&mut self, leq: &NFLinearLeq, active: Lit, doms: &Domains) 
+Solving,pub fn add_half_reified_mul_constraint(&mut self, mul: &EqMul, active: Lit, doms: &Domains) 
+Solving,pub fn add_eq_var_mul_lit_constraint(&mut self, mul: &NFEqVarMulLit) 
+Solving,pub fn add_propagator(&mut self, propagator: impl Into<DynPropagator>) 
+Solving,fn identity(&self) -> ReasonerId 
+Solving,fn propagate(&mut self, domains: &mut Domains) -> Result<(), Contradiction> 
+Solving,fn explain(
+Solving,fn print_stats(&self) 
+Solving,fn clone_box(&self) -> Box<dyn Theory> 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn setup(&self, id: super::PropagatorId, context: &mut super::Watches) 
+Solving,fn propagate(
+Solving,fn explain(
+Solving,fn clone_box(&self) -> Box<dyn Propagator> 
+Solving,fn mul(reif: VarRef, orig: VarRef, lit: Lit) -> VarEqVarMulLit 
+Solving,fn check_bounds(v: VarRef, d: &Domains, lb: IntCst, ub: IntCst) 
+Solving,fn test_propagation_with_true_lit() 
+Solving,fn test_propagation_with_false_lit() 
+Solving,fn test_propagation_with_non_zero_reif() 
+Solving,fn test_propagation_with_exclusive_bounds() 
+Solving,fn gen_problems(n: usize) -> Vec<(Domains, VarEqVarMulLit)> 
+Solving,fn test_explanations() 
+Solving,fn to_vec(self) -> Vec<T>;
+Solving,fn to_set(self) -> HashSet<T>
+Solving,fn to_vec(self) -> Vec<T> 
+Solving,fn to_set(self) -> HashSet<T>
+Solving,pub fn new() -> RefSet<K> 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn insert(&mut self, k: K) 
+Solving,pub fn remove(&mut self, k: K) 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn contains(&self, k: K) -> bool 
+Solving,pub fn iter(&self) -> impl Iterator<Item = K> + '_
+Solving,fn default() -> Self 
+Solving,pub fn new() -> IterableRefSet<K> 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn insert(&mut self, k: K) 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn contains(&self, k: K) -> bool 
+Solving,pub fn iter(&self) -> impl Iterator<Item = K> + '_
+Solving,fn default() -> Self 
+Solving,pub fn new(id: std::num::NonZeroU32) -> $type_name 
+Solving,fn from(u: usize) -> Self 
+Solving,fn from(v: $type_name) -> Self 
+Solving,fn from(u: u64) -> Self 
+Solving,fn from(v: $type_name) -> Self 
+Solving,fn from(u: u32) -> Self 
+Solving,fn from(v: $type_name) -> Self 
+Solving,fn index(&self, index: $type_name) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: $type_name) -> &mut Self::Output 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn keys(&self) -> impl Iterator<Item = K> 
+Solving,pub fn last_key(&self) -> Option<K> 
+Solving,pub fn push(&mut self, v: V) -> K
+Solving,pub fn get(&self, k: K) -> &V 
+Solving,pub fn get_ref<W>(&self, v: &W) -> Option<K>
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn initialized(len: usize, v: V) -> Self
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn keys(&self) -> impl Iterator<Item = K> 
+Solving,pub fn entries(&self) -> impl Iterator<Item = (K, &V)> 
+Solving,pub fn last_key(&self) -> Option<K> 
+Solving,pub fn push(&mut self, v: V) -> K 
+Solving,pub fn get(&self, k: K) -> &V 
+Solving,pub fn get_mut(&mut self, k: K) -> &mut V 
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: K) -> &mut Self::Output 
+Solving,fn default() -> Self 
+Solving,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new() -> Self 
+Solving,pub fn with_values(num_items: usize, value: V) -> Self
+Solving,pub fn fill_with(&mut self, to_key: K, value_gen: impl Fn() -> V)
+Solving,pub fn contains(&self, k: K) -> bool
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn push(&mut self, value: V) -> K
+Solving,pub fn pop(&mut self) -> Option<V>
+Solving,pub fn set_next(&mut self, expected_key: K, value: V)
+Solving,pub fn next_key(&self) -> K
+Solving,pub fn keys(&self) -> impl Iterator<Item = K>
+Solving,pub fn values(&self) -> impl Iterator<Item = &V>
+Solving,pub fn entries(&self) -> impl Iterator<Item = (K, &V)>
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: K) -> &mut Self::Output 
+Solving,fn default() -> Self 
+Solving,pub fn insert(&mut self, k: K, v: V) 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn remove(&mut self, k: K) 
+Solving,pub fn contains(&self, k: K) -> bool 
+Solving,pub fn get(&self, k: K) -> Option<&V> 
+Solving,pub fn get_mut(&mut self, k: K) -> Option<&mut V> 
+Solving,pub fn get_or_insert(&mut self, k: K, default: impl FnOnce() -> V) -> &V 
+Solving,pub fn get_mut_or_insert(&mut self, k: K, default: impl FnOnce() -> V) -> &mut V 
+Solving,pub fn keys(&self) -> impl Iterator<Item = K> + '_ 
+Solving,pub fn values(&self) -> impl Iterator<Item = &V> 
+Solving,pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> 
+Solving,pub fn entries(&self) -> impl Iterator<Item = (K, &V)> 
+Solving,pub fn entries_mut(&mut self) -> impl Iterator<Item = (K, &mut V)> 
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: K) -> &mut Self::Output 
+Solving,fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,fn default() -> Self 
+Solving,pub fn insert(&mut self, k: K, v: V) 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn contains(&self, k: K) -> bool 
+Solving,pub fn get(&self, k: K) -> Option<&V> 
+Solving,pub fn get_mut(&mut self, k: K) -> Option<&mut V> 
+Solving,pub fn get_or_insert(&mut self, k: K, default: impl FnOnce() -> V) -> &V 
+Solving,pub fn get_mut_or_insert(&mut self, k: K, default: impl FnOnce() -> V) -> &mut V 
+Solving,pub fn keys(&self) -> impl Iterator<Item = K> + '_ 
+Solving,pub fn values(&self) -> impl Iterator<Item = &V> 
+Solving,pub fn entries(&self) -> impl Iterator<Item = (K, &V)> 
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn index_mut(&mut self, index: K) -> &mut Self::Output 
+Solving,fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(key: K, prio: P) -> Self 
+Solving,fn eq(&self, other: &Self) -> bool 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn above(i: usize) -> usize 
+Solving,fn below_left(i: usize) -> usize 
+Solving,fn below_right(i: usize) -> usize 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn clear(&mut self) 
+Solving,pub fn num_enqueued_elements(&self) -> usize 
+Solving,pub fn enqueued_variables(&self) -> impl Iterator<Item = K> + '_ 
+Solving,pub fn declare_element(&mut self, key: K, priority: P)
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn keys(&self) -> impl Iterator<Item = K> + '_
+Solving,pub fn is_enqueued(&self, key: K) -> bool 
+Solving,pub fn is_declared(&self, key: K) -> bool 
+Solving,pub fn peek(&self) -> Option<&K> 
+Solving,pub fn pop(&mut self) -> Option<K> 
+Solving,pub fn enqueue(&mut self, key: K)
+Solving,pub fn change_priority<F: Fn(&mut P)>(&mut self, key: K, f: F) 
+Solving,pub fn change_all_priorities_in_place<F: Fn(&mut P)>(&mut self, f: F) 
+Solving,pub fn set_priority(&mut self, key: K, new_priority: P) 
+Solving,fn sift_after_priority_change(&mut self, place: PlaceInHeap) 
+Solving,pub fn priority(&self, k: K) -> P 
+Solving,fn sift_up(&mut self, i: PlaceInHeap)
+Solving,fn sift_hole_up(mut hole: Hole<K, P>)
+Solving,fn free(&self) -> PlaceInHeap 
+Solving,fn sift_down(&mut self, i: PlaceInHeap) 
+Solving,fn sift_hole_down(mut hole: Hole<K, P>) 
+Solving,fn sift_to_bottom_then_up(mut hole: Hole<K, P>) 
+Solving,fn element(&self) -> &HeapEntry<K, P> 
+Solving,fn drop(&mut self) 
+Solving,fn test_heap_insertion_removal() 
+Solving,fn eq(a: f64, b: f64) -> bool 
+Solving,pub fn new(first: A, last: A) -> Self 
+Solving,fn next(self) -> Self
+Solving,fn next_n(self, n: usize) -> Self;
+Solving,fn first(n: usize) -> Range<Self>
+Solving,fn next_n(self, n: usize) -> Self 
+Solving,fn min_value() -> Self;
+Solving,fn min_value() -> Self 
+Solving,fn next(&mut self) -> Option<A> 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn contains_key(&self, k: K) -> bool 
+Solving,pub fn remove(&mut self, k: K) -> Option<V> 
+Solving,pub fn insert(&mut self, k: K, v: V) 
+Solving,pub fn get(&self, k: K) -> Option<&V> 
+Solving,pub fn get_with_default(&self, k: K, default: V) -> V
+Solving,pub fn get_mut(&mut self, k: K) -> Option<&mut V> 
+Solving,pub fn map<V2>(&self, f: &dyn Fn(&V) -> V2) -> IdMap<K, V2> 
+Solving,pub fn keys_vec(&self) -> Vec<K>
+Solving,pub fn items_vec(&self) -> Vec<(K, &V)>
+Solving,fn index(&self, index: K) -> &Self::Output 
+Solving,fn save_state(&mut self) -> DecLvl;
+Solving,fn num_saved(&self) -> u32;
+Solving,fn current_decision_level(&self) -> DecLvl 
+Solving,fn restore_last(&mut self);
+Solving,fn restore(&mut self, saved_id: DecLvl) 
+Solving,fn reset(&mut self) 
+Solving,fn restore_last_with<F: FnMut(&Self::Event)>(&mut self, callback: F);
+Solving,fn restore_with<F: FnMut(&Self::Event)>(&mut self, saved_id: u32, mut callback: F) 
+Solving,pub fn new() -> Self 
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,pub fn to_int(self) -> u32 
+Solving,fn default() -> Self 
+Solving,fn add(self, rhs: i32) -> Self::Output 
+Solving,fn add_assign(&mut self, rhs: i32) 
+Solving,fn sub(self, rhs: i32) -> Self::Output 
+Solving,fn sub_assign(&mut self, rhs: i32) 
+Solving,fn from(u: u32) -> Self 
+Solving,fn from(u: usize) -> Self 
+Solving,fn from(dl: DecLvl) -> Self 
+Solving,fn index(&self, index: DecLvl) -> &Self::Output 
+Solving,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
+Solving,pub fn new(index: usize) -> Self 
+Solving,fn from(ei: EventIndex) -> Self 
+Solving,fn from(u: usize) -> Self 
+Solving,fn from(ei: EventIndex) -> Self 
+Solving,fn from(u: u32) -> Self 
+Solving,fn index(&self, index: EventIndex) -> &Self::Output 
+Solving,fn add(self, rhs: i32) -> Self::Output 
+Solving,fn add_assign(&mut self, rhs: i32) 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn len(&self) -> usize 
+Solving,pub fn next_slot(&self) -> EventIndex 
+Solving,pub fn push(&mut self, value: V) -> EventIndex 
+Solving,pub fn pop(&mut self) -> Option<V> 
+Solving,pub fn peek(&self) -> Option<&V> 
+Solving,pub fn append<Vs: IntoIterator<Item = V>>(&mut self, values: Vs) 
+Solving,pub fn reader(&self) -> ObsTrailCursor<V> 
+Solving,fn backtrack_with_callback(&mut self, mut f: impl FnMut(&V)) 
+Solving,pub fn num_events(&self) -> u32 
+Solving,pub fn is_empty(&self) -> bool 
+Solving,pub fn current_decision_level(&self) -> DecLvl 
+Solving,pub fn decision_level(&self, id: EventIndex) -> DecLvl 
+Solving,pub fn decision_level_class(&self, id: EventIndex) -> DecisionLevelClass 
+Solving,pub fn events_after(&self, dec_lvl: DecLvl) -> impl Iterator<Item = &V> + '_ 
+Solving,pub fn get_event(&self, id: EventIndex) -> &V 
+Solving,pub fn events(&self) -> &[V] 
+Solving,pub fn last_event_matching(
+Solving,pub fn print(&self)
+Solving,fn save_state(&mut self) -> DecLvl 
+Solving,fn num_saved(&self) -> u32 
+Solving,fn restore_last(&mut self) 
+Solving,fn restore_last_with<F: FnMut(&Self::Event)>(&mut self, callback: F) 
+Solving,fn eq(&self, other: &Self) -> bool 
+Solving,fn cmp(&self, other: &Self) -> Ordering 
+Solving,fn partial_cmp(&self, other: &Self) -> Option<Ordering> 
+Solving,fn default() -> Self 
+Solving,pub fn new() -> Self 
+Solving,pub fn is_pristine(&self) -> bool 
+Solving,pub fn mark_used(&mut self) 
+Solving,fn sync_backtrack(&mut self, queue: &ObsTrail<V>) 
+Solving,pub fn num_pending(&mut self, queue: &ObsTrail<V>) -> usize 
+Solving,pub fn pop<'q>(&mut self, queue: &'q ObsTrail<V>) -> Option<&'q V> 
+Solving,pub fn move_to_end(&mut self, queue: &ObsTrail<V>) 
+Solving,fn test_queues() 
+Solving,fn test_backtracks() 
+Solving,fn event_lookups() 
+Solving,fn test_decision_levels() 
+Solving,pub fn new() -> Self 
+Solving,pub fn push(&mut self, e: Event) -> EventIndex 
+Solving,pub fn get_event(&self, index: EventIndex) -> &Event 
+Solving,pub fn next_event(&self) -> EventIndex 
+Solving,pub fn pop_within_level(&mut self) -> Option<Event> 
+Solving,pub fn save_state(&mut self) -> DecLvl 
+Solving,pub fn num_saved(&self) -> u32 
+Solving,pub fn current_decision_level(&self) -> DecLvl 
+Solving,fn undo_last_with(&mut self, mut f: impl FnMut(Event)) 
+Solving,pub fn restore_last_with(&mut self, mut f: impl FnMut(Event)) 
+Solving,pub fn restore(&mut self, saved_state: u32, mut f: impl FnMut(Event)) 
+Solving,fn default() -> Self 
