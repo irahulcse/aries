@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOMAIN_DIR="/home/rahul/Desktop/aries/benchmarks/domains/AssemblyHierachial"
+DOMAIN_DIR="/home/rahul/Desktop/aries/benchmarks/domains/ChildSnack"
 
 # Run all problems in the domain
 for problem in $DOMAIN_DIR/*.hddl; do

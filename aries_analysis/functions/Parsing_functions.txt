@@ -1,36 +1,4 @@
 Parsing,pub fn parse_pddl_domain(pb: Input) -> Result<Domain> 
-Parsing,pub fn new(symbol: impl Into<Sym>, tpe: impl Into<Sym>) -> TypedSymbol 
-Parsing,pub fn consume_typed_symbols(input: &mut ListIter) -> std::result::Result<Vec<TypedSymbol>, ErrLoc> 
-Parsing,pub fn new(symbol: impl Into<Sym>, tpe: impl Into<Sym>) -> TypedSymbol 
-Parsing,pub fn parse_pddl_problem(pb: Input) -> Result<Problem> 
-Parsing,pub fn find_domain_of(problem_file: &std::path::Path) -> anyhow::Result<PathBuf> 
-Parsing,pub fn new(symbol: impl Into<Sym>, tpe: impl Into<Sym>) -> TypedSymbol 
-Parsing,pub fn parse_pddl_domain(pb: Input) -> Result<Domain> 
-Parsing,pub fn parse_pddl_problem(pb: Input) -> Result<Problem> 
-Parsing,pub fn find_domain_of(problem_file: &std::path::Path) -> anyhow::Result<PathBuf> 
-Parsing,fn from_str(s: &str) -> Result<Self, Self::Err> 
-Parsing,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,pub fn new(symbol: impl Into<Sym>, tpe: impl Into<Sym>) -> TypedSymbol 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
-Parsing,fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,pub fn consume_typed_symbols(input: &mut ListIter) -> std::result::Result<Vec<TypedSymbol>, ErrLoc> 
-Parsing,fn check_feature_presence(feature: PddlFeature, domain: &Domain, expr: &SExpr) -> Result<(), ErrLoc> 
-Parsing,fn read_domain(dom: SExpr) -> std::result::Result<Domain, ErrLoc> 
-Parsing,fn parse_task_network(mut key_values: ListIter) -> R<TaskNetwork> 
-Parsing,fn parse_task(e: &SExpr, allow_id: bool) -> std::result::Result<Task, ErrLoc> 
-Parsing,fn parse_conjunction<T>(e: &SExpr, item_parser: impl Fn(&SExpr) -> R<T>) -> R<Vec<T>> 
-Parsing,fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> 
-Parsing,fn read_problem(problem: SExpr) -> std::result::Result<Problem, ErrLoc> 
-Parsing,fn parsing() -> Result<(), String> 
-Parsing,fn parsing_hddl() -> Result<()> 
-Parsing,pub fn parse_pddl_domain(pb: Input) -> Result<Domain> 
 Parsing,pub fn parse_pddl_problem(pb: Input) -> Result<Problem> 
 Parsing,pub fn find_domain_of(problem_file: &std::path::Path) -> anyhow::Result<PathBuf> 
 Parsing,fn from_str(s: &str) -> Result<Self, Self::Err> 
