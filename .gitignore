@@ -14,3 +14,4 @@ __pycache__/
 lcov.info
 profile.json.gz
 out.perf
+output_aries_results/

@@ -60,7 +60,7 @@ debug = "line-tables-only" # Keep only the information for backtraces, not debug
 
 [profile.release]
 codegen-units = 8
-debug = false     # No debug symbols to keep executables small
+debug = true     # No debug symbols to keep executables small
 lto = "thin"
 opt-level = 3
 panic = "abort"
