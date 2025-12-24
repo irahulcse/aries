@@ -15,3 +15,4 @@ lcov.info
 profile.json.gz
 out.perf
 output_aries_results/
+energy_results/

@@ -3,5 +3,10 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Run using the python inside the venv relative to this script
-sudo "$SCRIPT_DIR/.venv/bin/python3" "$SCRIPT_DIR/aries-runners/aries-runner.py" \
+# sudo "$SCRIPT_DIR/.venv/bin/python3" "$SCRIPT_DIR/aries-runners/aries-runner.py" \
+#      --config "$SCRIPT_DIR/aries-runners/config-aries.json"
+
+
+# Run using the python inside the venv relative to this script
+sudo "$SCRIPT_DIR/.venv/bin/python3" "$SCRIPT_DIR/aries-runners/aries-perf.py" \
      --config "$SCRIPT_DIR/aries-runners/config-aries.json"

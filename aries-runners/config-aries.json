@@ -1,10 +1,10 @@
 {
   "project_root": "/home/rahul/Desktop/aries",
-  "input_directory": "/home/rahul/Desktop/aries/benchmarks/domains",
-  "output_directory": "/home/rahul/Desktop/aries/aries-runners/output_aries_results",
-  "function_selection_file": "/home/rahul/Desktop/aries/aries-runners/functions_aries.txt",
-  "binary_path": "/home/rahul/Desktop/aries/target/release/aries-plan",
+  "input_directory": "benchmarks/domains",
+  "output_directory": "aries-runners/energy_results",
+  "function_selection_file": "aries-runners/functions_aries.txt",
+  "binary_path": "target/perf/aries-plan",
   "repetitions": 30,
-  "timeout_seconds": 600,
+  "timeout": 600,
   "debug": true
 }
